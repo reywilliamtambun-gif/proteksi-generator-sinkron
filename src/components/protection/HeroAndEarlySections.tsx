@@ -249,9 +249,44 @@ export default function HeroAndEarlySections() {
           </p>
 
           {/* description */}
-          <p className="text-white/60 text-sm sm:text-base max-w-2xl mx-auto mb-8 leading-relaxed">
+          <p className="text-white/60 text-sm sm:text-base max-w-2xl mx-auto mb-6 leading-relaxed">
             Pelajari bagaimana sistem proteksi bekerja menjaga generator sinkron dari berbagai jenis gangguan — mulai dari hubung singkat, arus lebih, gangguan tanah, hingga kehilangan eksitasi — melalui simulasi interaktif dan visualisasi real-time.
           </p>
+
+          {/* Tim Penyusun */}
+          <div className="glass-card p-4 sm:p-5 max-w-2xl mx-auto mb-8" style={{ borderRadius: '16px' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2">
+                <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+                <circle cx="9" cy="7" r="4" />
+                <path d="M23 21v-2a4 4 0 0 0-3-3.87" />
+                <path d="M16 3.13a4 4 0 0 1 0 7.75" />
+              </svg>
+              <span className="text-cyan-300 font-semibold text-sm">Tim Penyusun</span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
+              {[
+                'Rey William Tambun',
+                'Intas Sari Panggabean',
+                'Sesilia H Br Samura',
+                'Dimas D Kurniawan',
+              ].map((name, idx) => (
+                <div key={name} className="flex items-center gap-2 bg-white/5 rounded-lg px-3 py-2 border border-white/8">
+                  <span className="w-6 h-6 rounded-full bg-gradient-to-br from-cyan-400 to-purple-400 flex items-center justify-center text-white text-xs font-bold shrink-0">
+                    {idx + 1}
+                  </span>
+                  <span className="text-white/80 text-sm">{name}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center gap-2 bg-purple-400/10 rounded-lg px-3 py-2 border border-purple-400/15">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#a78bfa" strokeWidth="2">
+                <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+                <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+              </svg>
+              <span className="text-purple-300/80 text-xs sm:text-sm font-medium">Program Studi Pendidikan Teknik Elektro, Universitas Negeri Medan</span>
+            </div>
+          </div>
 
           {/* CTA buttons */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-12">

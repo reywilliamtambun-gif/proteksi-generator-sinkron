@@ -229,7 +229,7 @@ export default function Home() {
         {/* Footer */}
         <footer className="relative z-10 mt-auto border-t border-white/10 bg-[rgba(10,14,39,0.6)] backdrop-blur-md">
           <div className="max-w-7xl mx-auto px-4 py-8">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
               <div>
                 <h3 className="text-white font-bold mb-3">Sistem Proteksi Generator Sinkron</h3>
                 <p className="text-white/50 text-sm">
@@ -258,11 +258,25 @@ export default function Home() {
                   ))}
                 </div>
               </div>
+              <div>
+                <h4 className="text-cyan-400 font-semibold mb-3 text-sm">Tim Penyusun</h4>
+                <div className="space-y-1">
+                  <p className="text-white/60 text-xs">Rey William Tambun</p>
+                  <p className="text-white/60 text-xs">Intas Sari Panggabean</p>
+                  <p className="text-white/60 text-xs">Sesilia H Br Samura</p>
+                  <p className="text-white/60 text-xs">Dimas D Kurniawan</p>
+                </div>
+              </div>
             </div>
-            <div className="mt-6 pt-4 border-t border-white/5 text-center">
-              <p className="text-white/30 text-xs">
-                © 2025 Media Pembelajaran Proteksi Sistem Tenaga Listrik | Projek Akhir
-              </p>
+            <div className="mt-6 pt-4 border-t border-white/5">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
+                <p className="text-white/30 text-xs">
+                  © 2025 Media Pembelajaran Proteksi Sistem Tenaga Listrik | Projek Akhir
+                </p>
+                <p className="text-purple-300/60 text-xs font-medium">
+                  Program Studi Pendidikan Teknik Elektro, Universitas Negeri Medan
+                </p>
+              </div>
             </div>
           </div>
         </footer>

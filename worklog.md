@@ -252,3 +252,26 @@ Stage Summary:
 - Section 11: Full fault simulation with 13 fault types, 4-phase animation sequence, results display
 - All content in Indonesian, dark liquid glass theme
 - Lint passed, dev server compiling successfully
+
+---
+Task ID: 14
+Agent: Main
+Task: Add creator names and university info to Hero section and Footer
+
+Work Log:
+- Read current HeroAndEarlySections.tsx and page.tsx to find best placement
+- Added "Tim Penyusun" card to Hero section (Beranda) with:
+  - Team icon and "Tim Penyusun" label
+  - 4 creator names in 2-column grid with gradient numbered badges
+  - University info card with book icon and purple styling
+- Updated Footer in page.tsx:
+  - Changed from 3-column to 4-column grid
+  - Added "Tim Penyusun" column with all 4 creator names
+  - Added university name in bottom copyright bar (purple styling)
+- Lint check passed with no errors
+- Dev server compiling successfully
+
+Stage Summary:
+- Creator names added to Hero section and Footer
+- University and program info (Program Studi Pendidikan Teknik Elektro, Universitas Negeri Medan) added
+- All changes follow the dark liquid glass design system
