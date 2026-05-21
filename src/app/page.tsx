@@ -271,7 +271,7 @@ export default function Home() {
             <div className="mt-6 pt-4 border-t border-white/5">
               <div className="flex flex-col sm:flex-row items-center justify-between gap-2">
                 <p className="text-white/30 text-xs">
-                  © 2025 Media Pembelajaran Proteksi Sistem Tenaga Listrik | Projek Akhir
+                  © {new Date().getFullYear()} Media Pembelajaran Proteksi Sistem Tenaga Listrik | Projek Akhir
                 </p>
                 <p className="text-purple-300/60 text-xs font-medium">
                   Program Studi Pendidikan Teknik Elektro, Universitas Negeri Medan
