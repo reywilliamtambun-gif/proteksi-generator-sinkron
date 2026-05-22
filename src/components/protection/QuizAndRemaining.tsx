@@ -12,8 +12,16 @@ export default function QuizAndRemaining() {
   const [syncError, setSyncError] = useState('');
   const [relayNominal, setRelayNominal] = useState('');
   const [relayFactor, setRelayFactor] = useState('');
-  const [relayCtRatio, setRelayCtRatio] = useState('');
-  const [relayResult, setRelayResult] = useState<{ primary: string; secondary: string } | null>(null);
+  const [relayCtPrimary, setRelayCtPrimary] = useState('');
+  const [relayCtSecondary, setRelayCtSecondary] = useState('');
+  const [relayFaultCurrent, setRelayFaultCurrent] = useState('');
+  const [relayResult, setRelayResult] = useState<{
+    primary: string;
+    secondary: string;
+    psm: string;
+    isTripped: boolean;
+    statusMsg: string;
+  } | null>(null);
   const [relayError, setRelayError] = useState('');
 
   // ======== CALCULATOR: Kecepatan Sinkron ========
@@ -48,31 +56,40 @@ export default function QuizAndRemaining() {
     setRelayResult(null);
     setRelayError('');
 
-    if (!relayNominal.trim() || !relayFactor.trim() || !relayCtRatio.trim()) {
+    if (!relayNominal.trim() || !relayFactor.trim() || !relayCtPrimary.trim() || !relayCtSecondary.trim() || !relayFaultCurrent.trim()) {
       setRelayError('Semua input harus diisi.');
       return;
     }
 
     const In = parseFloat(relayNominal);
     const factor = parseFloat(relayFactor);
-    const ctRatio = parseFloat(relayCtRatio);
+    const ctPrimary = parseFloat(relayCtPrimary);
+    const ctSecondary = parseFloat(relayCtSecondary);
+    const faultCurrent = parseFloat(relayFaultCurrent);
 
-    if (isNaN(In) || isNaN(factor) || isNaN(ctRatio)) {
+    if (isNaN(In) || isNaN(factor) || isNaN(ctPrimary) || isNaN(ctSecondary) || isNaN(faultCurrent)) {
       setRelayError('Input harus berupa angka.');
       return;
     }
 
-    if (In <= 0 || factor <= 0 || ctRatio <= 0) {
-      setRelayError('Semua nilai harus lebih dari 0.');
+    if (In <= 0 || factor <= 0 || ctPrimary <= 0 || ctSecondary <= 0 || faultCurrent <= 0) {
+      setRelayError('Semua nilai harus lebih dari 0 (tidak boleh nol atau negatif).');
       return;
     }
 
     const iPrimary = factor * In;
-    const iSecondary = (iPrimary * 5) / ctRatio;
+    const iSecondary = (iPrimary * ctSecondary) / ctPrimary;
+    const psm = faultCurrent / iPrimary;
+    const isTripped = faultCurrent > iPrimary;
 
     setRelayResult({
       primary: `I setting primer = ${factor} × ${In} = ${iPrimary.toFixed(2)} A`,
-      secondary: `I setting sekunder = ${iPrimary.toFixed(2)} × 5 / ${ctRatio} = ${iSecondary.toFixed(2)} A`,
+      secondary: `I setting sekunder = ${iPrimary.toFixed(2)} × ${ctSecondary} / ${ctPrimary} = ${iSecondary.toFixed(4)} A`,
+      psm: `PSM = ${faultCurrent} / ${iPrimary.toFixed(2)} = ${psm.toFixed(4)}`,
+      isTripped,
+      statusMsg: isTripped
+        ? 'Relay bekerja / trip karena arus gangguan melebihi arus setting.'
+        : 'Relay belum bekerja karena arus gangguan belum melebihi arus setting.',
     });
   };
 
@@ -225,18 +242,20 @@ export default function QuizAndRemaining() {
                 <h3 className="text-xl font-bold text-white">Kalkulator Setting Overcurrent Relay</h3>
               </div>
 
-              <p className="text-white/50 text-sm mb-1">I setting primer = Faktor × In</p>
-              <p className="text-white/50 text-sm mb-1">I setting sekunder = I setting primer × 5 / Rasio CT</p>
-              <p className="text-white/40 text-xs mb-5">Contoh: In=100A, Setting=1.2, CT=100/5 → I primer=120A, I sekunder=6A</p>
+              <div className="mb-5 space-y-1">
+                <p className="text-white/50 text-sm font-mono">I setting primer = Faktor setting × In</p>
+                <p className="text-white/50 text-sm font-mono">I setting sekunder = I setting primer × CT sekunder / CT primer</p>
+                <p className="text-cyan-400/70 text-sm font-mono font-semibold">PSM = Arus gangguan (If) / I setting primer</p>
+              </div>
 
               <div className="space-y-4">
                 <div>
-                  <label className="block text-white/70 text-sm font-medium mb-1.5">Arus Nominal (In) [A]</label>
+                  <label className="block text-white/70 text-sm font-medium mb-1.5">Arus Nominal, In [A]</label>
                   <input
                     type="number"
                     value={relayNominal}
                     onChange={(e) => { setRelayNominal(e.target.value); setRelayError(''); setRelayResult(null); }}
-                    placeholder="Contoh: 100"
+                    placeholder="Contoh: 400"
                     className="w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-purple-400/50 focus:ring-1 focus:ring-purple-400/30 transition-all"
                   />
                 </div>
@@ -247,18 +266,41 @@ export default function QuizAndRemaining() {
                     type="number"
                     value={relayFactor}
                     onChange={(e) => { setRelayFactor(e.target.value); setRelayError(''); setRelayResult(null); }}
-                    placeholder="Contoh: 1.2"
+                    placeholder="Contoh: 1.25"
                     className="w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-purple-400/50 focus:ring-1 focus:ring-purple-400/30 transition-all"
                   />
                 </div>
 
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="block text-white/70 text-sm font-medium mb-1.5">CT Primer [A]</label>
+                    <input
+                      type="number"
+                      value={relayCtPrimary}
+                      onChange={(e) => { setRelayCtPrimary(e.target.value); setRelayError(''); setRelayResult(null); }}
+                      placeholder="Contoh: 500"
+                      className="w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-purple-400/50 focus:ring-1 focus:ring-purple-400/30 transition-all"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-white/70 text-sm font-medium mb-1.5">CT Sekunder [A]</label>
+                    <input
+                      type="number"
+                      value={relayCtSecondary}
+                      onChange={(e) => { setRelayCtSecondary(e.target.value); setRelayError(''); setRelayResult(null); }}
+                      placeholder="1 atau 5"
+                      className="w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-purple-400/50 focus:ring-1 focus:ring-purple-400/30 transition-all"
+                    />
+                  </div>
+                </div>
+
                 <div>
-                  <label className="block text-white/70 text-sm font-medium mb-1.5">Rasio CT Primer</label>
+                  <label className="block text-white/70 text-sm font-medium mb-1.5">Arus Gangguan, If [A]</label>
                   <input
                     type="number"
-                    value={relayCtRatio}
-                    onChange={(e) => { setRelayCtRatio(e.target.value); setRelayError(''); setRelayResult(null); }}
-                    placeholder="Contoh: 100"
+                    value={relayFaultCurrent}
+                    onChange={(e) => { setRelayFaultCurrent(e.target.value); setRelayError(''); setRelayResult(null); }}
+                    placeholder="Contoh: 2000"
                     className="w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-purple-400/50 focus:ring-1 focus:ring-purple-400/30 transition-all"
                   />
                 </div>
@@ -279,9 +321,42 @@ export default function QuizAndRemaining() {
                 </button>
 
                 {relayResult && (
-                  <div className="mt-3 p-4 rounded-lg bg-purple-400/10 border border-purple-400/20 space-y-2">
-                    <p className="text-purple-400 font-mono text-sm font-semibold">{relayResult.primary}</p>
-                    <p className="text-purple-400 font-mono text-sm font-semibold">{relayResult.secondary}</p>
+                  <div className="mt-3 space-y-3">
+                    {/* I setting primer */}
+                    <div className="p-4 rounded-lg bg-purple-400/10 border border-purple-400/20">
+                      <p className="text-white/40 text-xs uppercase tracking-wider mb-1">I Setting Primer</p>
+                      <p className="text-purple-400 font-mono text-sm font-semibold">{relayResult.primary}</p>
+                    </div>
+
+                    {/* I setting sekunder */}
+                    <div className="p-4 rounded-lg bg-purple-400/10 border border-purple-400/20">
+                      <p className="text-white/40 text-xs uppercase tracking-wider mb-1">I Setting Sekunder</p>
+                      <p className="text-purple-400 font-mono text-sm font-semibold">{relayResult.secondary}</p>
+                    </div>
+
+                    {/* PSM */}
+                    <div className="p-4 rounded-lg bg-cyan-400/10 border border-cyan-400/30">
+                      <p className="text-white/40 text-xs uppercase tracking-wider mb-1">Plug Setting Multiplier (PSM)</p>
+                      <p className="text-cyan-400 font-mono text-sm font-semibold">{relayResult.psm}</p>
+                    </div>
+
+                    {/* Status relay */}
+                    <div className={`p-4 rounded-lg border ${relayResult.isTripped ? 'bg-red-400/10 border-red-400/30' : 'bg-green-400/10 border-green-400/30'}`}>
+                      <p className="text-white/40 text-xs uppercase tracking-wider mb-1">Status Relay</p>
+                      <div className="flex items-center gap-2">
+                        {relayResult.isTripped ? (
+                          <svg className="w-5 h-5 text-red-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4.5c-.77-.833-2.694-.833-3.464 0L3.34 16.5c-.77.833.192 2.5 1.732 2.5z" /></svg>
+                        ) : (
+                          <svg className="w-5 h-5 text-green-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                        )}
+                        <p className={`font-semibold text-sm ${relayResult.isTripped ? 'text-red-400' : 'text-green-400'}`}>
+                          {relayResult.isTripped ? 'RELAY BEKERJA / TRIP' : 'RELAY BELUM BEKERJA'}
+                        </p>
+                      </div>
+                      <p className={`text-sm mt-2 ${relayResult.isTripped ? 'text-red-300/80' : 'text-green-300/80'}`}>
+                        {relayResult.statusMsg}
+                      </p>
+                    </div>
                   </div>
                 )}
               </div>
