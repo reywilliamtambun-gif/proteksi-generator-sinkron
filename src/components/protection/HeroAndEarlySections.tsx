@@ -267,7 +267,7 @@ export default function HeroAndEarlySections() {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mb-3">
               {[
                 'Rey William Tambun',
-                'Intas Sari Panggabean',
+                'Intan Sari Panggabean',
                 'Sesilia H Br Samura',
                 'Dimas D Kurniawan',
               ].map((name, idx) => (

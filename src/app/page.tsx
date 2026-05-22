@@ -262,7 +262,7 @@ export default function Home() {
                 <h4 className="text-cyan-400 font-semibold mb-3 text-sm">Tim Penyusun</h4>
                 <div className="space-y-1">
                   <p className="text-white/60 text-xs">Rey William Tambun</p>
-                  <p className="text-white/60 text-xs">Intas Sari Panggabean</p>
+                  <p className="text-white/60 text-xs">Intan Sari Panggabean</p>
                   <p className="text-white/60 text-xs">Sesilia H Br Samura</p>
                   <p className="text-white/60 text-xs">Dimas D Kurniawan</p>
                 </div>
