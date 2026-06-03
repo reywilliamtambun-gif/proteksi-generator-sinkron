@@ -223,323 +223,486 @@ export default function DiagramAndSimulation() {
               </span>
             </div>
 
-            <svg
-              viewBox="0 0 1100 320"
-              className="w-full h-auto"
-              style={{ maxHeight: '400px' }}
-            >
-              <defs>
-                <filter id="glowCyan" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur stdDeviation="4" result="blur" />
-                  <feFlood floodColor="#00d4ff" floodOpacity="0.6" result="color" />
-                  <feComposite in="color" in2="blur" operator="in" result="glow" />
-                  <feMerge>
-                    <feMergeNode in="glow" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-                <filter id="glowRed" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur stdDeviation="4" result="blur" />
-                  <feFlood floodColor="#ff4466" floodOpacity="0.6" result="color" />
-                  <feComposite in="color" in2="blur" operator="in" result="glow" />
-                  <feMerge>
-                    <feMergeNode in="glow" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-                <filter id="glowGreen" x="-50%" y="-50%" width="200%" height="200%">
-                  <feGaussianBlur stdDeviation="3" result="blur" />
-                  <feFlood floodColor="#00ff88" floodOpacity="0.5" result="color" />
-                  <feComposite in="color" in2="blur" operator="in" result="glow" />
-                  <feMerge>
-                    <feMergeNode in="glow" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-                <filter id="componentGlow" x="-20%" y="-20%" width="140%" height="140%">
-                  <feGaussianBlur stdDeviation="2" result="blur" />
-                  <feFlood floodColor="#00d4ff" floodOpacity="0.15" result="color" />
-                  <feComposite in="color" in2="blur" operator="in" result="glow" />
-                  <feMerge>
-                    <feMergeNode in="glow" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
-              </defs>
+            {(() => {
+              /* Relay definitions for the modular diagram */
+              const relays = [
+                { ansi: '87G', name: 'Differential', monitors: 'Arus diferensial masuk/keluar stator', curve: 'Persentase arus (slope)', matchCodes: ['87G'] },
+                { ansi: '50/51', name: 'Overcurrent', monitors: 'Arus lebih pada stator generator', curve: 'Waktu terbalik (IDMT)', matchCodes: ['50/51'] },
+                { ansi: '59/27', name: 'Over/Undervoltage', monitors: 'Tegangan lebih/kurang terminal', curve: 'Tegangan tetap (definite)', matchCodes: ['59', '27'] },
+                { ansi: '32', name: 'Reverse Power', monitors: 'Arah daya aktif (daya balik)', curve: 'Daya tetap (definite time)', matchCodes: ['32'] },
+                { ansi: '40', name: 'Loss of Excitation', monitors: 'Arus eksitasi & impedansi', curve: 'Impedansi (mho circle)', matchCodes: ['40'] },
+                { ansi: '51N/64G', name: 'Ground Fault', monitors: 'Arus bocor tanah / tegangan netral', curve: 'Waktu terbalik (IDMT)', matchCodes: ['51N', '64G', '51N / 64G'] },
+              ];
 
-              {/* Background grid */}
-              <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
-                <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0,200,255,0.05)" strokeWidth="0.5" />
-              </pattern>
-              <rect width="1100" height="320" fill="url(#grid)" />
+              const isRelayActive = (matchCodes: string[]) => {
+                const active = diagramState.relayAktif;
+                if (active === '-') return false;
+                return matchCodes.some(code => active.includes(code) || code.includes(active));
+              };
 
-              {/* ===== CONNECTION LINES ===== */}
-              {/* Generator to CT */}
-              <line
-                x1="130" y1="160" x2="200" y2="160"
-                stroke={flowStroke}
-                strokeWidth="3"
-                strokeDasharray="8 6"
-                className={isFlowStopped ? '' : 'electricity-flow'}
-                style={isFlowStopped ? { opacity: 0.3 } : undefined}
-                filter={isFlowStopped ? undefined : `url(#glow${diagramState.flowColor === 'red' ? 'Red' : 'Cyan'})`}
-              />
+              const cbIsTrip = diagramState.cbStatus === 'TRIP';
+              const busbarColor = cbIsTrip ? 'rgba(100,100,100,0.5)' : '#8844ff';
+              const loadOpacity = cbIsTrip ? 0.35 : 1;
+              const loadIndicatorColor = cbIsTrip ? '#666' : '#00ff88';
+              const relayBoxW = 120;
+              const relayBoxH = 52;
+              const relayGap = 8;
+              const relayStartY = 68;
+              const relayX = 410;
 
-              {/* CT to PT branch */}
-              <line
-                x1="270" y1="160" x2="340" y2="160"
-                stroke={flowStroke}
-                strokeWidth="3"
-                strokeDasharray="8 6"
-                className={isFlowStopped ? '' : 'electricity-flow'}
-                style={isFlowStopped ? { opacity: 0.3 } : undefined}
-                filter={isFlowStopped ? undefined : `url(#glow${diagramState.flowColor === 'red' ? 'Red' : 'Cyan'})`}
-              />
-
-              {/* PT branch up */}
-              <line
-                x1="305" y1="130" x2="305" y2="80"
-                stroke="#00d4ff"
-                strokeWidth="2"
-                strokeDasharray="4 4"
-                className="electricity-flow"
-                opacity="0.5"
-              />
-
-              {/* PT to Relay */}
-              <line
-                x1="305" y1="80" x2="500" y2="80"
-                stroke="#00d4ff"
-                strokeWidth="2"
-                strokeDasharray="4 4"
-                className="electricity-flow"
-                opacity="0.5"
-              />
-              <line
-                x1="500" y1="80" x2="500" y2="120"
-                stroke="#00d4ff"
-                strokeWidth="2"
-                strokeDasharray="4 4"
-                className="electricity-flow"
-                opacity="0.5"
-              />
-
-              {/* Main line to Relay */}
-              <line
-                x1="340" y1="160" x2="460" y2="160"
-                stroke={flowStroke}
-                strokeWidth="3"
-                strokeDasharray="8 6"
-                className={isFlowStopped ? '' : 'electricity-flow'}
-                style={isFlowStopped ? { opacity: 0.3 } : undefined}
-                filter={isFlowStopped ? undefined : `url(#glow${diagramState.flowColor === 'red' ? 'Red' : 'Cyan'})`}
-              />
-
-              {/* Relay to Trip Coil */}
-              <line
-                x1="560" y1="160" x2="640" y2="160"
-                stroke={diagramState.cbStatus === 'TRIP' ? '#ff4466' : '#00d4ff'}
-                strokeWidth="3"
-                strokeDasharray="8 6"
-                className={diagramState.cbStatus === 'TRIP' ? 'electricity-flow' : isFlowStopped ? '' : 'electricity-flow'}
-                style={isFlowStopped && diagramState.cbStatus !== 'TRIP' ? { opacity: 0.3 } : undefined}
-                filter={diagramState.cbStatus === 'TRIP' ? 'url(#glowRed)' : isFlowStopped ? undefined : 'url(#glowCyan)'}
-              />
-
-              {/* Trip Coil to CB */}
-              <line
-                x1="710" y1="160" x2="790" y2="160"
-                stroke={diagramState.cbStatus === 'TRIP' ? '#ff4466' : flowStroke}
-                strokeWidth="3"
-                strokeDasharray="8 6"
-                className={isFlowStopped ? '' : 'electricity-flow'}
-                style={isFlowStopped ? { opacity: 0.3 } : undefined}
-                filter={`url(#glow${diagramState.cbStatus === 'TRIP' ? 'Red' : diagramState.flowColor === 'red' ? 'Red' : 'Cyan'})`}
-              />
-
-              {/* CB to Busbar */}
-              <line
-                x1="870" y1="160" x2="960" y2="160"
-                stroke={diagramState.cbStatus === 'TRIP' ? 'rgba(100,100,100,0.4)' : flowStroke}
-                strokeWidth="3"
-                strokeDasharray="8 6"
-                className={diagramState.cbStatus === 'TRIP' ? '' : isFlowStopped ? '' : 'electricity-flow'}
-                style={{ opacity: diagramState.cbStatus === 'TRIP' ? 0.3 : isFlowStopped ? 0.3 : 1 }}
-                filter={diagramState.cbStatus === 'TRIP' || isFlowStopped ? undefined : `url(#glow${diagramState.flowColor === 'red' ? 'Red' : 'Cyan'})`}
-              />
-
-              {/* ===== GENERATOR ===== */}
-              <g
-                onClick={(e) => handleSvgClick('generator', e)}
-                className="cursor-pointer"
+              return (
+              <svg
+                viewBox="0 0 1200 500"
+                className="w-full h-auto"
+                style={{ maxHeight: '480px' }}
               >
-                <circle
-                  cx="80" cy="160" r="50"
-                  fill="rgba(0,20,50,0.6)"
-                  stroke={diagramState.status === 'terputus' ? '#ff4466' : '#00d4ff'}
-                  strokeWidth="2.5"
-                  filter="url(#componentGlow)"
+                <defs>
+                  <filter id="glowCyan" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feFlood floodColor="#00d4ff" floodOpacity="0.6" result="color" />
+                    <feComposite in="color" in2="blur" operator="in" result="glow" />
+                    <feMerge>
+                      <feMergeNode in="glow" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                  <filter id="glowRed" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feFlood floodColor="#ff4466" floodOpacity="0.6" result="color" />
+                    <feComposite in="color" in2="blur" operator="in" result="glow" />
+                    <feMerge>
+                      <feMergeNode in="glow" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                  <filter id="glowGreen" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feFlood floodColor="#00ff88" floodOpacity="0.5" result="color" />
+                    <feComposite in="color" in2="blur" operator="in" result="glow" />
+                    <feMerge>
+                      <feMergeNode in="glow" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                  <filter id="componentGlow" x="-20%" y="-20%" width="140%" height="140%">
+                    <feGaussianBlur stdDeviation="2" result="blur" />
+                    <feFlood floodColor="#00d4ff" floodOpacity="0.15" result="color" />
+                    <feComposite in="color" in2="blur" operator="in" result="glow" />
+                    <feMerge>
+                      <feMergeNode in="glow" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                  <filter id="glowPurple" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feFlood floodColor="#8844ff" floodOpacity="0.5" result="color" />
+                    <feComposite in="color" in2="blur" operator="in" result="glow" />
+                    <feMerge>
+                      <feMergeNode in="glow" />
+                      <feMergeNode in="SourceGraphic" />
+                    </feMerge>
+                  </filter>
+                </defs>
+
+                {/* Background grid */}
+                <pattern id="grid" width="40" height="40" patternUnits="userSpaceOnUse">
+                  <path d="M 40 0 L 0 0 0 40" fill="none" stroke="rgba(0,200,255,0.05)" strokeWidth="0.5" />
+                </pattern>
+                <rect width="1200" height="500" fill="url(#grid)" />
+
+                {/* ===== CONNECTION LINES ===== */}
+
+                {/* Generator → CT/PT: main power line */}
+                <line
+                  x1="130" y1="250" x2="215" y2="250"
+                  stroke={flowStroke}
+                  strokeWidth="3.5"
+                  strokeDasharray="10 6"
+                  className={isFlowStopped ? '' : 'electricity-flow'}
+                  style={isFlowStopped ? { opacity: 0.3 } : undefined}
+                  filter={isFlowStopped ? undefined : `url(#glow${diagramState.flowColor === 'red' ? 'Red' : 'Cyan'})`}
                 />
-                {/* Rotor indicator */}
-                <g transform={`rotate(${rotorAngle}, 80, 160)`}>
-                  <line x1="80" y1="125" x2="80" y2="195" stroke={diagramState.status === 'terputus' ? '#ff4466' : '#00ff88'} strokeWidth="2" opacity="0.8" />
-                  <line x1="45" y1="160" x2="115" y2="160" stroke={diagramState.status === 'terputus' ? '#ff4466' : '#00ff88'} strokeWidth="2" opacity="0.8" />
-                </g>
-                <text x="80" y="165" textAnchor="middle" fill="white" fontSize="20" fontWeight="bold">G</text>
-                <text x="80" y="225" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="11">Generator</text>
-                {/* Status indicator */}
-                <circle
-                  cx="80" cy="110"
-                  r="6"
-                  fill={diagramState.status === 'normal' ? '#00ff88' : '#ff4466'}
-                  className={diagramState.alarmActive ? 'alarm-blink' : ''}
-                  filter={diagramState.status === 'normal' ? 'url(#glowGreen)' : 'url(#glowRed)'}
-                />
-              </g>
 
-              {/* ===== CT ===== */}
-              <g
-                onClick={(e) => handleSvgClick('ct', e)}
-                className="cursor-pointer"
-              >
-                <circle cx="235" cy="140" r="18" fill="rgba(0,20,50,0.6)" stroke="#00d4ff" strokeWidth="2" filter="url(#componentGlow)" />
-                <circle cx="235" cy="180" r="18" fill="rgba(0,20,50,0.6)" stroke="#00d4ff" strokeWidth="2" filter="url(#componentGlow)" />
-                <text x="235" y="144" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">CT</text>
-                <text x="235" y="184" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">CT</text>
-                <text x="235" y="218" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="10">CT</text>
-              </g>
+                {/* CT/PT → Relay Group: CT signal lines (cyan, thinner) */}
+                <line x1="295" y1="185" x2="345" y2="185" stroke="#00d4ff" strokeWidth="1.5" strokeDasharray="4 4" className={isFlowStopped ? '' : 'electricity-flow'} opacity={isFlowStopped ? 0.3 : 0.6} />
+                <line x1="345" y1="185" x2="345" y2="250" stroke="#00d4ff" strokeWidth="1.5" strokeDasharray="4 4" className={isFlowStopped ? '' : 'electricity-flow'} opacity={isFlowStopped ? 0.3 : 0.6} />
+                <line x1="345" y1="250" x2="410" y2="250" stroke="#00d4ff" strokeWidth="1.5" strokeDasharray="4 4" className={isFlowStopped ? '' : 'electricity-flow'} opacity={isFlowStopped ? 0.3 : 0.6} />
 
-              {/* ===== PT ===== */}
-              <g
-                onClick={(e) => handleSvgClick('pt', e)}
-                className="cursor-pointer"
-              >
-                <circle cx="305" cy="55" r="14" fill="rgba(0,20,50,0.6)" stroke="#8844ff" strokeWidth="2" filter="url(#componentGlow)" />
-                <circle cx="305" cy="35" r="14" fill="rgba(0,20,50,0.6)" stroke="#8844ff" strokeWidth="2" filter="url(#componentGlow)" />
-                <text x="305" y="59" textAnchor="middle" fill="white" fontSize="9" fontWeight="bold">PT</text>
-                <text x="305" y="39" textAnchor="middle" fill="white" fontSize="9" fontWeight="bold">PT</text>
-                <text x="305" y="15" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="10">PT</text>
-              </g>
+                {/* CT signal vertical bus to each relay */}
+                <line x1="345" y1={relayStartY + relayBoxH / 2} x2="345" y2={relayStartY + 5 * (relayBoxH + relayGap) + relayBoxH / 2} stroke="#00d4ff" strokeWidth="1" strokeDasharray="3 3" className={isFlowStopped ? '' : 'electricity-flow'} opacity={isFlowStopped ? 0.2 : 0.4} />
+                {relays.map((_, i) => (
+                  <line key={`ct-sig-${i}`} x1="345" y1={relayStartY + i * (relayBoxH + relayGap) + relayBoxH / 2} x2="410" y2={relayStartY + i * (relayBoxH + relayGap) + relayBoxH / 2} stroke="#00d4ff" strokeWidth="1" strokeDasharray="3 3" className={isFlowStopped ? '' : 'electricity-flow'} opacity={isFlowStopped ? 0.2 : 0.4} />
+                ))}
 
-              {/* ===== RELAY ===== */}
-              <g
-                onClick={(e) => handleSvgClick('relay', e)}
-                className="cursor-pointer"
-              >
-                <rect
-                  x="460" y="120" width="100" height="80" rx="8"
-                  fill={diagramState.relayAktif !== '-' ? 'rgba(255,68,102,0.15)' : 'rgba(0,20,50,0.6)'}
+                {/* PT signal lines (purple tint, dashed) */}
+                <line x1="295" y1="320" x2="370" y2="320" stroke="#9966ff" strokeWidth="1.5" strokeDasharray="5 4" className={isFlowStopped ? '' : 'electricity-flow'} opacity={isFlowStopped ? 0.3 : 0.5} />
+                <line x1="370" y1="320" x2="370" y2="250" stroke="#9966ff" strokeWidth="1.5" strokeDasharray="5 4" className={isFlowStopped ? '' : 'electricity-flow'} opacity={isFlowStopped ? 0.3 : 0.5} />
+
+                {/* PT signal vertical bus to each relay */}
+                <line x1="370" y1={relayStartY + relayBoxH / 2} x2="370" y2={relayStartY + 5 * (relayBoxH + relayGap) + relayBoxH / 2} stroke="#9966ff" strokeWidth="1" strokeDasharray="3 3" className={isFlowStopped ? '' : 'electricity-flow'} opacity={isFlowStopped ? 0.2 : 0.35} />
+                {relays.map((_, i) => (
+                  <line key={`pt-sig-${i}`} x1="370" y1={relayStartY + i * (relayBoxH + relayGap) + relayBoxH / 2} x2="410" y2={relayStartY + i * (relayBoxH + relayGap) + relayBoxH / 2} stroke="#9966ff" strokeWidth="1" strokeDasharray="3 3" className={isFlowStopped ? '' : 'electricity-flow'} opacity={isFlowStopped ? 0.2 : 0.35} />
+                ))}
+
+                {/* Active Relay → Trip Coil: trip signal line */}
+                <line
+                  x1={relayX + relayBoxW} y1="250" x2="640" y2="250"
                   stroke={diagramState.relayAktif !== '-' ? '#ff4466' : '#00d4ff'}
-                  strokeWidth="2.5"
-                  filter="url(#componentGlow)"
-                  className={diagramState.relayAktif !== '-' ? 'glow-pulse' : ''}
+                  strokeWidth={diagramState.relayAktif !== '-' ? '3' : '2'}
+                  strokeDasharray="8 6"
+                  className={diagramState.relayAktif !== '-' ? 'electricity-flow' : isFlowStopped ? '' : 'electricity-flow'}
+                  style={isFlowStopped && diagramState.relayAktif === '-' ? { opacity: 0.3 } : undefined}
+                  filter={diagramState.relayAktif !== '-' ? 'url(#glowRed)' : isFlowStopped ? undefined : 'url(#glowCyan)'}
                 />
-                <text x="510" y="152" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">RELAY</text>
-                <text x="510" y="172" textAnchor="middle" fill={diagramState.relayAktif !== '-' ? '#ff4466' : '#00d4ff'} fontSize="11" fontWeight="bold">
-                  {diagramState.relayAktif !== '-' ? diagramState.relayAktif : 'STANDBY'}
-                </text>
-                <text x="510" y="218" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="10">Relay Proteksi</text>
-                {/* Active relay indicator */}
-                {diagramState.relayAktif !== '-' && (
-                  <circle cx="550" cy="130" r="5" fill="#ff4466" className="alarm-blink" />
-                )}
-              </g>
 
-              {/* ===== TRIP COIL ===== */}
-              <g
-                onClick={(e) => handleSvgClick('tripcoil', e)}
-                className="cursor-pointer"
-              >
-                <rect
-                  x="640" y="130" width="70" height="60" rx="6"
-                  fill={diagramState.cbStatus === 'TRIP' ? 'rgba(255,68,102,0.15)' : 'rgba(0,20,50,0.6)'}
-                  stroke={diagramState.cbStatus === 'TRIP' ? '#ff4466' : '#00d4ff'}
-                  strokeWidth="2"
-                  filter="url(#componentGlow)"
+                {/* Trip Coil → CB: mechanical connection */}
+                <line
+                  x1="710" y1="250" x2="770" y2="250"
+                  stroke={cbIsTrip ? '#ff4466' : flowStroke}
+                  strokeWidth="3"
+                  strokeDasharray="8 6"
+                  className={isFlowStopped ? '' : 'electricity-flow'}
+                  style={isFlowStopped ? { opacity: 0.3 } : undefined}
+                  filter={`url(#glow${cbIsTrip ? 'Red' : diagramState.flowColor === 'red' ? 'Red' : 'Cyan'})`}
                 />
-                <text x="675" y="157" textAnchor="middle" fill="white" fontSize="12" fontWeight="bold">TC</text>
-                <text x="675" y="175" textAnchor="middle" fill={diagramState.cbStatus === 'TRIP' ? '#ff4466' : '#00d4ff'} fontSize="9">
-                  {diagramState.cbStatus === 'TRIP' ? 'AKTIF' : 'STANDBY'}
-                </text>
-                <text x="675" y="210" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="10">Trip Coil</text>
-              </g>
 
-              {/* ===== CIRCUIT BREAKER ===== */}
-              <g
-                onClick={(e) => handleSvgClick('cb', e)}
-                className="cursor-pointer"
-              >
-                <rect
-                  x="790" y="110" width="80" height="100" rx="8"
-                  fill={diagramState.cbStatus === 'TRIP' ? 'rgba(255,68,102,0.2)' : 'rgba(0,200,100,0.1)'}
-                  stroke={diagramState.cbStatus === 'TRIP' ? '#ff4466' : '#00ff88'}
-                  strokeWidth="2.5"
-                  filter="url(#componentGlow)"
+                {/* CB → Busbar: power line */}
+                <line
+                  x1="860" y1="250" x2="940" y2="250"
+                  stroke={cbIsTrip ? 'rgba(100,100,100,0.4)' : flowStroke}
+                  strokeWidth="3.5"
+                  strokeDasharray="8 6"
+                  className={cbIsTrip ? '' : isFlowStopped ? '' : 'electricity-flow'}
+                  style={{ opacity: cbIsTrip ? 0.3 : isFlowStopped ? 0.3 : 1 }}
+                  filter={cbIsTrip || isFlowStopped ? undefined : `url(#glow${diagramState.flowColor === 'red' ? 'Red' : 'Cyan'})`}
                 />
-                {/* Switch symbol */}
-                {diagramState.cbStatus === 'ON' ? (
-                  <line x1="810" y1="160" x2="850" y2="140" stroke="#00ff88" strokeWidth="3" />
-                ) : (
-                  <>
-                    <line x1="810" y1="160" x2="840" y2="125" stroke="#ff4466" strokeWidth="3" />
-                    <circle cx="850" cy="140" r="4" fill="#ff4466" />
-                  </>
-                )}
-                <circle cx="810" cy="160" r="5" fill={diagramState.cbStatus === 'ON' ? '#00ff88' : '#ff4466'} />
-                <text x="830" y="185" textAnchor="middle" fill={diagramState.cbStatus === 'ON' ? '#00ff88' : '#ff4466'} fontSize="14" fontWeight="bold">
-                  {diagramState.cbStatus}
-                </text>
-                <text x="830" y="230" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="10">Circuit Breaker</text>
-              </g>
 
-              {/* ===== BUSBAR ===== */}
-              <g
-                onClick={(e) => handleSvgClick('busbar', e)}
-                className="cursor-pointer"
-              >
-                <line x1="960" y1="110" x2="960" y2="210" stroke="#8844ff" strokeWidth="5" filter="url(#componentGlow)" />
-                <line x1="960" y1="110" x2="1070" y2="110" stroke="#8844ff" strokeWidth="3" />
-                <line x1="960" y1="160" x2="1070" y2="160" stroke="#8844ff" strokeWidth="3" />
-                <line x1="960" y1="210" x2="1070" y2="210" stroke="#8844ff" strokeWidth="3" />
-                <text x="1030" y="105" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="9">Beban 1</text>
-                <text x="1030" y="155" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="9">Beban 2</text>
-                <text x="1030" y="205" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="9">Beban 3</text>
-                <text x="960" y="245" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="11" fontWeight="bold">BUSBAR</text>
-              </g>
+                {/* Busbar → Load branches */}
+                {[120, 250, 380].map((y, i) => (
+                  <line
+                    key={`load-line-${i}`}
+                    x1="960" y1={y} x2="1100" y2={y}
+                    stroke={busbarColor}
+                    strokeWidth="2.5"
+                    strokeDasharray={cbIsTrip ? '4 6' : '6 4'}
+                    className={cbIsTrip ? '' : 'electricity-flow'}
+                    opacity={loadOpacity}
+                  />
+                ))}
 
-              {/* ===== ALARM INDICATOR ===== */}
-              {diagramState.alarmActive && (
+                {/* ===== GENERATOR ===== */}
+                <g
+                  onClick={(e) => handleSvgClick('generator', e)}
+                  className="cursor-pointer"
+                >
+                  <circle
+                    cx="80" cy="250" r="55"
+                    fill="rgba(0,20,50,0.6)"
+                    stroke={diagramState.status === 'terputus' ? '#ff4466' : '#00d4ff'}
+                    strokeWidth="2.5"
+                    filter="url(#componentGlow)"
+                  />
+                  {/* Outer ring decoration */}
+                  <circle cx="80" cy="250" r="62" fill="none" stroke={diagramState.status === 'terputus' ? 'rgba(255,68,102,0.2)' : 'rgba(0,212,255,0.2)'} strokeWidth="1" strokeDasharray="4 4" />
+                  {/* Rotor indicator */}
+                  <g transform={`rotate(${rotorAngle}, 80, 250)`}>
+                    <line x1="80" y1="210" x2="80" y2="290" stroke={diagramState.status === 'terputus' ? '#ff4466' : '#00ff88'} strokeWidth="2.5" opacity="0.8" />
+                    <line x1="40" y1="250" x2="120" y2="250" stroke={diagramState.status === 'terputus' ? '#ff4466' : '#00ff88'} strokeWidth="2.5" opacity="0.8" />
+                  </g>
+                  <text x="80" y="255" textAnchor="middle" fill="white" fontSize="24" fontWeight="bold">G</text>
+                  <text x="80" y="320" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="11">Generator</text>
+                  {/* Status indicator */}
+                  <circle
+                    cx="80" cy="188"
+                    r="6"
+                    fill={diagramState.status === 'normal' ? '#00ff88' : '#ff4466'}
+                    className={diagramState.alarmActive ? 'alarm-blink' : ''}
+                    filter={diagramState.status === 'normal' ? 'url(#glowGreen)' : 'url(#glowRed)'}
+                  />
+                </g>
+
+                {/* ===== CT (Current Transformer) - Concentric circles ===== */}
+                <g
+                  onClick={(e) => handleSvgClick('ct', e)}
+                  className="cursor-pointer"
+                >
+                  {/* Outer circle */}
+                  <circle cx="255" cy="185" r="26" fill="rgba(0,20,50,0.6)" stroke="#00d4ff" strokeWidth="2" filter="url(#componentGlow)" />
+                  {/* Inner circle */}
+                  <circle cx="255" cy="185" r="16" fill="rgba(0,10,30,0.8)" stroke="#00d4ff" strokeWidth="1.5" />
+                  {/* Core symbol */}
+                  <line x1="243" y1="185" x2="267" y2="185" stroke="#00d4ff" strokeWidth="1.5" opacity="0.6" />
+                  <text x="255" y="189" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">CT</text>
+                  <text x="255" y="228" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="10">CT</text>
+                </g>
+
+                {/* ===== PT (Potential Transformer) - Concentric circles ===== */}
+                <g
+                  onClick={(e) => handleSvgClick('pt', e)}
+                  className="cursor-pointer"
+                >
+                  {/* Outer circle */}
+                  <circle cx="255" cy="320" r="26" fill="rgba(0,20,50,0.6)" stroke="#8844ff" strokeWidth="2" filter="url(#componentGlow)" />
+                  {/* Inner circle */}
+                  <circle cx="255" cy="320" r="16" fill="rgba(0,10,30,0.8)" stroke="#8844ff" strokeWidth="1.5" />
+                  {/* Core symbol */}
+                  <line x1="243" y1="320" x2="267" y2="320" stroke="#8844ff" strokeWidth="1.5" opacity="0.6" />
+                  <text x="255" y="324" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">PT</text>
+                  <text x="255" y="363" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="10">PT</text>
+                </g>
+
+                {/* CT-PT connecting vertical line */}
+                <line x1="255" y1="211" x2="255" y2="294" stroke="rgba(0,212,255,0.3)" strokeWidth="1.5" strokeDasharray="3 3" />
+
+                {/* ===== RELAY GROUP (6 individual relays) ===== */}
                 <g>
-                  <circle cx="510" cy="105" r="8" fill="#ff4466" className="alarm-blink" filter="url(#glowRed)" />
-                  <text x="510" y="109" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold">!</text>
-                </g>
-              )}
+                  {/* Group label */}
+                  <text x={relayX + relayBoxW / 2} y="55" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="11" fontWeight="bold">RELAY PROTEKSI</text>
+                  {/* Group border (subtle) */}
+                  <rect
+                    x={relayX - 8} y="58"
+                    width={relayBoxW + 16} height={5 * (relayBoxH + relayGap) + relayBoxH + 16}
+                    rx="10" ry="10"
+                    fill="none"
+                    stroke="rgba(0,212,255,0.12)"
+                    strokeWidth="1"
+                    strokeDasharray="4 4"
+                  />
 
-              {/* Flow direction arrows */}
-              {!isFlowStopped && (
-                <g opacity="0.5">
-                  <polygon points="170,155 180,160 170,165" fill={flowStroke} />
-                  <polygon points="310,155 320,160 310,165" fill={flowStroke} />
-                  <polygon points="440,155 450,160 440,165" fill={flowStroke} />
-                  <polygon points="620,155 630,160 620,165" fill={flowStroke} />
-                  <polygon points="770,155 780,160 770,165" fill={flowStroke} />
+                  {relays.map((relay, i) => {
+                    const active = isRelayActive(relay.matchCodes);
+                    const ry = relayStartY + i * (relayBoxH + relayGap);
+
+                    return (
+                      <g
+                        key={relay.ansi}
+                        onClick={(e) => handleSvgClick('relay', e)}
+                        className="cursor-pointer"
+                      >
+                        {/* Relay box */}
+                        <rect
+                          x={relayX} y={ry}
+                          width={relayBoxW} height={relayBoxH}
+                          rx="8" ry="8"
+                          fill={active ? 'rgba(255,68,102,0.18)' : 'rgba(0,20,50,0.5)'}
+                          stroke={active ? '#ff4466' : 'rgba(0,212,255,0.4)'}
+                          strokeWidth={active ? '2.5' : '1.5'}
+                          filter={active ? 'url(#glowRed)' : 'url(#componentGlow)'}
+                          className={active ? 'glow-pulse' : ''}
+                        />
+                        {/* Glass-like top highlight */}
+                        <rect
+                          x={relayX + 2} y={ry + 2}
+                          width={relayBoxW - 4} height={relayBoxH / 3}
+                          rx="6" ry="6"
+                          fill="rgba(255,255,255,0.04)"
+                        />
+                        {/* Status indicator dot */}
+                        <circle
+                          cx={relayX + 16} cy={ry + relayBoxH / 2}
+                          r="5"
+                          fill={active ? '#ff4466' : diagramState.status === 'normal' ? '#00ff88' : '#00d4ff'}
+                          className={active ? 'alarm-blink' : ''}
+                          filter={active ? 'url(#glowRed)' : diagramState.status === 'normal' ? 'url(#glowGreen)' : 'url(#glowCyan)'}
+                        />
+                        {/* ANSI code */}
+                        <text
+                          x={relayX + 30} y={ry + relayBoxH / 2 - 4}
+                          fill={active ? '#ff4466' : '#00d4ff'}
+                          fontSize="13"
+                          fontWeight="bold"
+                          fontFamily="monospace"
+                        >
+                          {relay.ansi}
+                        </text>
+                        {/* Relay name */}
+                        <text
+                          x={relayX + 30} y={ry + relayBoxH / 2 + 12}
+                          fill="rgba(255,255,255,0.65)"
+                          fontSize="9"
+                        >
+                          {relay.name}
+                        </text>
+                        {/* Active label */}
+                        {active && (
+                          <text
+                            x={relayX + relayBoxW - 8} y={ry + 14}
+                            textAnchor="end"
+                            fill="#ff4466"
+                            fontSize="7"
+                            fontWeight="bold"
+                            className="alarm-blink"
+                          >
+                            TRIP
+                          </text>
+                        )}
+                      </g>
+                    );
+                  })}
                 </g>
-              )}
-            </svg>
+
+                {/* ===== TRIP COIL ===== */}
+                <g
+                  onClick={(e) => handleSvgClick('tripcoil', e)}
+                  className="cursor-pointer"
+                >
+                  <rect
+                    x="640" y="220" width="70" height="60" rx="8"
+                    fill={cbIsTrip ? 'rgba(255,68,102,0.15)' : 'rgba(0,20,50,0.6)'}
+                    stroke={cbIsTrip ? '#ff4466' : '#00d4ff'}
+                    strokeWidth="2"
+                    filter="url(#componentGlow)"
+                  />
+                  {/* Coil symbol (zigzag) */}
+                  <path
+                    d="M655,240 L660,235 L670,245 L680,235 L690,245 L695,240"
+                    fill="none"
+                    stroke={cbIsTrip ? '#ff4466' : '#00d4ff'}
+                    strokeWidth="1.5"
+                    opacity="0.5"
+                  />
+                  <text x="675" y="262" textAnchor="middle" fill="white" fontSize="13" fontWeight="bold">TC</text>
+                  <text x="675" y="280" textAnchor="middle" fill={cbIsTrip ? '#ff4466' : '#00d4ff'} fontSize="9">
+                    {cbIsTrip ? 'AKTIF' : 'STANDBY'}
+                  </text>
+                  <text x="675" y="300" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="10">Trip Coil</text>
+                </g>
+
+                {/* ===== CIRCUIT BREAKER ===== */}
+                <g
+                  onClick={(e) => handleSvgClick('cb', e)}
+                  className="cursor-pointer"
+                >
+                  <rect
+                    x="770" y="200" width="90" height="100" rx="8"
+                    fill={cbIsTrip ? 'rgba(255,68,102,0.2)' : 'rgba(0,200,100,0.1)'}
+                    stroke={cbIsTrip ? '#ff4466' : '#00ff88'}
+                    strokeWidth="2.5"
+                    filter="url(#componentGlow)"
+                  />
+                  {/* Switch symbol - closed (ON) */}
+                  {diagramState.cbStatus === 'ON' ? (
+                    <>
+                      <circle cx="795" cy="250" r="5" fill="#00ff88" />
+                      <line x1="800" y1="248" x2="835" y2="238" stroke="#00ff88" strokeWidth="3" />
+                      <circle cx="835" cy="238" r="5" fill="#00ff88" />
+                    </>
+                  ) : (
+                    <>
+                      <circle cx="795" cy="250" r="5" fill="#ff4466" />
+                      <line x1="800" y1="248" x2="830" y2="218" stroke="#ff4466" strokeWidth="3" />
+                      <circle cx="835" cy="238" r="5" fill="#ff4466" filter="url(#glowRed)" />
+                    </>
+                  )}
+                  <text x="815" y="280" textAnchor="middle" fill={cbIsTrip ? '#ff4466' : '#00ff88'} fontSize="14" fontWeight="bold">
+                    {diagramState.cbStatus}
+                  </text>
+                  <text x="815" y="320" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="10">Circuit Breaker</text>
+                </g>
+
+                {/* ===== BUSBAR ===== */}
+                <g
+                  onClick={(e) => handleSvgClick('busbar', e)}
+                  className="cursor-pointer"
+                >
+                  {/* Vertical busbar */}
+                  <line x1="960" y1="100" x2="960" y2="400" stroke={busbarColor} strokeWidth="6" filter={cbIsTrip ? undefined : 'url(#glowPurple)'} />
+                  {/* Busbar label */}
+                  <text x="960" y="430" textAnchor="middle" fill={cbIsTrip ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.6)'} fontSize="11" fontWeight="bold">BUSBAR</text>
+
+                  {/* Load branches */}
+                  {[{ y: 120, label: 'Beban 1' }, { y: 250, label: 'Beban 2' }, { y: 380, label: 'Beban 3' }].map((load) => (
+                    <g key={load.label} opacity={loadOpacity}>
+                      {/* Branch connector dot */}
+                      <circle cx="960" cy={load.y} r="4" fill={loadIndicatorColor} filter={cbIsTrip ? undefined : 'url(#glowGreen)'} />
+                      {/* Load box */}
+                      <rect
+                        x="1050" y={load.y - 16} width="100" height="32" rx="6"
+                        fill={cbIsTrip ? 'rgba(60,60,60,0.3)' : 'rgba(0,200,100,0.08)'}
+                        stroke={cbIsTrip ? 'rgba(100,100,100,0.4)' : 'rgba(0,255,136,0.3)'}
+                        strokeWidth="1.5"
+                      />
+                      {/* Load indicator */}
+                      <circle
+                        cx="1062" cy={load.y}
+                        r="4"
+                        fill={loadIndicatorColor}
+                        className={cbIsTrip ? '' : 'glow-pulse'}
+                      />
+                      <text x="1100" y={load.y + 4} textAnchor="middle" fill={cbIsTrip ? 'rgba(255,255,255,0.3)' : 'rgba(255,255,255,0.7)'} fontSize="10">{load.label}</text>
+                    </g>
+                  ))}
+                </g>
+
+                {/* ===== ALARM INDICATOR ===== */}
+                {diagramState.alarmActive && (
+                  <g>
+                    <circle cx={relayX + relayBoxW / 2} cy="58" r="10" fill="#ff4466" className="alarm-blink" filter="url(#glowRed)" />
+                    <text x={relayX + relayBoxW / 2} y="62" textAnchor="middle" fill="white" fontSize="10" fontWeight="bold">!</text>
+                  </g>
+                )}
+
+                {/* Flow direction arrows */}
+                {!isFlowStopped && (
+                  <g opacity="0.5">
+                    <polygon points="170,245 180,250 170,255" fill={flowStroke} />
+                    <polygon points="620,245 630,250 620,255" fill={diagramState.relayAktif !== '-' ? '#ff4466' : flowStroke} />
+                    <polygon points="750,245 760,250 750,255" fill={cbIsTrip ? '#ff4466' : flowStroke} />
+                    <polygon points="910,245 920,250 910,255" fill={cbIsTrip ? '#666' : flowStroke} opacity={cbIsTrip ? 0.4 : 1} />
+                  </g>
+                )}
+
+                {/* Section labels at top */}
+                <text x="80" y="20" textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize="8" fontWeight="bold">GENERATOR</text>
+                <text x="255" y="20" textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize="8" fontWeight="bold">CT / PT</text>
+                <text x="675" y="20" textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize="8" fontWeight="bold">TRIP COIL</text>
+                <text x="815" y="20" textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize="8" fontWeight="bold">CB</text>
+                <text x="960" y="20" textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize="8" fontWeight="bold">BUSBAR</text>
+              </svg>
+              );
+            })()}
 
             {/* Tooltip */}
-            {tooltipInfo && svgComponentInfo[tooltipInfo.key] && (
-              <div
-                className="svg-tooltip"
-                style={{
-                  left: `${tooltipInfo.x}px`,
-                  top: `${tooltipInfo.y - 80}px`,
-                }}
-              >
-                <div className="font-bold text-cyan-300 mb-1">{svgComponentInfo[tooltipInfo.key].name}</div>
-                <div className="text-white/80 text-xs">{svgComponentInfo[tooltipInfo.key].desc}</div>
-              </div>
-            )}
+            {tooltipInfo && (() => {
+              const relayTooltipData: Record<string, { name: string; desc: string }> = {
+                'relay-87G': { name: '87G - Differential Relay', desc: 'Memantau arus diferensial masuk/keluar stator. Karakteristik: Persentase arus (slope).' },
+                'relay-50/51': { name: '50/51 - Overcurrent Relay', desc: 'Memantau arus lebih stator. Karakteristik: Waktu terbalik (IDMT) & sesaat.' },
+                'relay-59/27': { name: '59/27 - Over/Undervoltage Relay', desc: 'Memantau tegangan lebih/kurang. Karakteristik: Tegangan tetap (definite).' },
+                'relay-32': { name: '32 - Reverse Power Relay', desc: 'Memantau arah daya aktif. Karakteristik: Daya tetap (definite time).' },
+                'relay-40': { name: '40 - Loss of Excitation Relay', desc: 'Memantau arus eksitasi & impedansi. Karakteristik: Impedansi (mho circle).' },
+                'relay-51N/64G': { name: '51N/64G - Ground Fault Relay', desc: 'Memantau arus bocor tanah/tegangan netral. Karakteristik: Waktu terbalik (IDMT).' },
+              };
+              const key = tooltipInfo.key;
+              if (key.startsWith('relay-') && relayTooltipData[key]) {
+                return (
+                  <div
+                    className="svg-tooltip"
+                    style={{
+                      left: `${tooltipInfo.x}px`,
+                      top: `${tooltipInfo.y - 90}px`,
+                    }}
+                  >
+                    <div className="font-bold text-red-400 mb-1">{relayTooltipData[key].name}</div>
+                    <div className="text-white/80 text-xs">{relayTooltipData[key].desc}</div>
+                  </div>
+                );
+              }
+              if (svgComponentInfo[key]) {
+                return (
+                  <div
+                    className="svg-tooltip"
+                    style={{
+                      left: `${tooltipInfo.x}px`,
+                      top: `${tooltipInfo.y - 80}px`,
+                    }}
+                  >
+                    <div className="font-bold text-cyan-300 mb-1">{svgComponentInfo[key].name}</div>
+                    <div className="text-white/80 text-xs">{svgComponentInfo[key].desc}</div>
+                  </div>
+                );
+              }
+              return null;
+            })()}
 
             {/* Dashboard Status */}
             <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
