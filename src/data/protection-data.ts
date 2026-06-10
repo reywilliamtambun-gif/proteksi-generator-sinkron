@@ -637,6 +637,243 @@ export const evaluationQuestions = [
   'Buat analisis singkat jika generator mengalami gangguan tanah pada stator.'
 ];
 
+// ===== Enhanced Relay Data for Interactive Diagram =====
+export interface RelayDetail {
+  ansi: string;
+  name: string;
+  monitors: string;
+  curve: string;
+  matchFaultIds: string[];
+  ctInput: boolean;
+  ptInput: boolean;
+  normalValue: string;
+  tripValue: string;
+  unit: string;
+}
+
+export const relayDetails: RelayDetail[] = [
+  {
+    ansi: '87G',
+    name: 'Differential Relay',
+    monitors: 'Arus diferensial masuk/keluar stator',
+    curve: 'Persentase arus (slope)',
+    matchFaultIds: ['hubung-singkat'],
+    ctInput: true,
+    ptInput: false,
+    normalValue: '0',
+    tripValue: '>0.1×In',
+    unit: 'A',
+  },
+  {
+    ansi: '50/51',
+    name: 'Overcurrent Relay',
+    monitors: 'Arus lebih pada stator generator',
+    curve: 'Waktu terbalik (IDMT)',
+    matchFaultIds: ['arus-lebih'],
+    ctInput: true,
+    ptInput: false,
+    normalValue: '400',
+    tripValue: '>500',
+    unit: 'A',
+  },
+  {
+    ansi: '46',
+    name: 'Negative Sequence',
+    monitors: 'Arus urutan negatif (beban tidak seimbang)',
+    curve: 'I₂² × t = K (thermal)',
+    matchFaultIds: ['beban-tidak-seimbang'],
+    ctInput: true,
+    ptInput: false,
+    normalValue: '0.05',
+    tripValue: '>0.1',
+    unit: '×In',
+  },
+  {
+    ansi: '32',
+    name: 'Reverse Power',
+    monitors: 'Arah daya aktif (daya balik)',
+    curve: 'Daya tetap (definite time)',
+    matchFaultIds: ['daya-balik'],
+    ctInput: true,
+    ptInput: true,
+    normalValue: '+50',
+    tripValue: '<0',
+    unit: 'MW',
+  },
+  {
+    ansi: '40',
+    name: 'Loss of Excitation',
+    monitors: 'Arus eksitasi & impedansi',
+    curve: 'Impedansi (mho circle)',
+    matchFaultIds: ['kehilangan-eksitasi'],
+    ctInput: true,
+    ptInput: true,
+    normalValue: '1.0',
+    tripValue: '<0.4',
+    unit: 'pu Z',
+  },
+  {
+    ansi: '59',
+    name: 'Overvoltage',
+    monitors: 'Tegangan lebih terminal',
+    curve: 'Tegangan tetap (definite)',
+    matchFaultIds: ['tegangan-lebih'],
+    ctInput: false,
+    ptInput: true,
+    normalValue: '11.5',
+    tripValue: '>12.65',
+    unit: 'kV',
+  },
+  {
+    ansi: '27',
+    name: 'Undervoltage',
+    monitors: 'Tegangan kurang terminal',
+    curve: 'Tegangan tetap (definite)',
+    matchFaultIds: ['tegangan-kurang'],
+    ctInput: false,
+    ptInput: true,
+    normalValue: '11.5',
+    tripValue: '<9.2',
+    unit: 'kV',
+  },
+  {
+    ansi: '81U/O',
+    name: 'Under/Overfrequency',
+    monitors: 'Frekuensi sistem (rendah/tinggi)',
+    curve: 'Frekuensi tetap (definite)',
+    matchFaultIds: ['frekuensi-kurang', 'frekuensi-lebih'],
+    ctInput: false,
+    ptInput: true,
+    normalValue: '50.0',
+    tripValue: '<47.5/>52.5',
+    unit: 'Hz',
+  },
+  {
+    ansi: '78',
+    name: 'Out of Step',
+    monitors: 'Impedansi ayunan daya (power swing)',
+    curve: 'Impedansi (blinder)',
+    matchFaultIds: ['out-of-step'],
+    ctInput: true,
+    ptInput: true,
+    normalValue: 'Sinkron',
+    tripValue: 'Out of step',
+    unit: '-',
+  },
+];
+
+// ===== Fault Simulation Data =====
+export interface FaultSimulation {
+  faultId: string;
+  name: string;
+  affectedRelayAnsi: string[];
+  affectedVoltages: { R: number; S: number; T: number };
+  affectedCurrent: number;
+  affectedFrequency: number;
+  affectedPower: number;
+  affectedPowerFactor: number;
+  affectedReactive: number;
+  tripSequence: string[];
+  loadStatus: [boolean, boolean, boolean];
+}
+
+export const faultSimulations: FaultSimulation[] = [
+  {
+    faultId: 'overcurrent',
+    name: 'Overcurrent',
+    affectedRelayAnsi: ['50/51'],
+    affectedVoltages: { R: 9.8, S: 9.5, T: 9.9 },
+    affectedCurrent: 850,
+    affectedFrequency: 49.8,
+    affectedPower: 12.5,
+    affectedPowerFactor: 0.82,
+    affectedReactive: 8.7,
+    tripSequence: ['Gangguan arus lebih terdeteksi', 'Relay 50/51 aktif', 'Sinyal trip dikirim ke trip coil', 'Circuit breaker terbuka', 'Generator terputus dari sistem — AMAN'],
+    loadStatus: [false, false, false],
+  },
+  {
+    faultId: 'loss-of-excitation',
+    name: 'Loss of Excitation',
+    affectedRelayAnsi: ['40'],
+    affectedVoltages: { R: 8.2, S: 8.0, T: 8.1 },
+    affectedCurrent: 520,
+    affectedFrequency: 49.5,
+    affectedPower: 5.2,
+    affectedPowerFactor: 0.35,
+    affectedReactive: -15.2,
+    tripSequence: ['Kehilangan eksitasi terdeteksi', 'Relay 40 aktif (impedansi masuk zona mho)', 'Sinyal trip dikirim ke trip coil', 'Circuit breaker terbuka', 'Generator terputus — AMAN'],
+    loadStatus: [false, false, false],
+  },
+  {
+    faultId: 'reverse-power',
+    name: 'Reverse Power',
+    affectedRelayAnsi: ['32'],
+    affectedVoltages: { R: 11.2, S: 11.0, T: 11.1 },
+    affectedCurrent: 180,
+    affectedFrequency: 50.0,
+    affectedPower: -3.5,
+    affectedPowerFactor: -0.5,
+    affectedReactive: 6.1,
+    tripSequence: ['Daya balik terdeteksi', 'Relay 32 aktif (daya negatif)', 'Sinyal trip dikirim ke trip coil', 'Circuit breaker terbuka', 'Generator terputus — AMAN'],
+    loadStatus: [false, false, false],
+  },
+  {
+    faultId: 'negative-sequence',
+    name: 'Negative Sequence',
+    affectedRelayAnsi: ['46'],
+    affectedVoltages: { R: 10.5, S: 9.2, T: 10.8 },
+    affectedCurrent: 480,
+    affectedFrequency: 49.9,
+    affectedPower: 8.3,
+    affectedPowerFactor: 0.72,
+    affectedReactive: 7.9,
+    tripSequence: ['Beban tidak seimbang terdeteksi', 'Relay 46 aktif (arus urutan negatif tinggi)', 'Alarm diberikan ke operator', 'Sinyal trip dikirim ke trip coil', 'Circuit breaker terbuka — AMAN'],
+    loadStatus: [true, false, false],
+  },
+  {
+    faultId: 'short-circuit',
+    name: 'Short Circuit (Internal)',
+    affectedRelayAnsi: ['87G', '50/51'],
+    affectedVoltages: { R: 3.2, S: 2.8, T: 3.5 },
+    affectedCurrent: 2500,
+    affectedFrequency: 48.5,
+    affectedPower: 2.1,
+    affectedPowerFactor: 0.25,
+    affectedReactive: 8.2,
+    tripSequence: ['Hubung singkat internal terdeteksi', 'Relay 87G aktif (diferensial tinggi)', 'Relay 50/51 aktif (arus sangat besar)', 'Sinyal trip dikirim ke trip coil', 'Circuit breaker terbuka — AMAN'],
+    loadStatus: [false, false, false],
+  },
+];
+
+// ===== Event Log Entry =====
+export interface EventLogEntry {
+  timestamp: string;
+  event: string;
+  type: 'info' | 'warning' | 'fault' | 'trip' | 'safe';
+}
+
+// ===== Normal Operating Parameters =====
+export const normalParameters = {
+  voltageR: 11.5,
+  voltageS: 11.4,
+  voltageT: 11.5,
+  current: 400,
+  frequency: 50.0,
+  activePower: 10.0,
+  reactivePower: 5.0,
+  powerFactor: 0.89,
+};
+
+// ===== Pengertian Generator Sinkron Data =====
+export const generatorComponents = [
+  { name: 'Rotor', desc: 'Bagian berputar yang menghasilkan medan magnet saat dialiri arus DC dari sistem eksitasi.', term: 'Field Winding' },
+  { name: 'Stator', desc: 'Bagian diam tempat kumparan fasa R/S/T yang menghasilkan tegangan induksi AC.', term: 'Armature Winding' },
+  { name: 'Slip Rings / Brush', desc: 'Cincin gesek dan sikat karbon yang menghantarkan arus DC ke rotor.', term: 'Collector Rings' },
+  { name: 'Housing / Frame', desc: 'Rangka luar pelindung yang menopang inti stator dan sistem pendinginan.', term: 'Stator Frame' },
+  { name: 'Cooling System', desc: 'Sistem pendinginan (H₂, air, atau udara) menjaga suhu operasi generator.', term: 'Heat Exchanger' },
+  { name: 'Bearing', desc: 'Bantalan yang menopang poros rotor agar dapat berputar dengan halus dan presisi.', term: 'Journal Bearing' },
+];
+
 export const references = [
   'Chapman, S. J. Electric Machinery Fundamentals. McGraw-Hill.',
   'Umans, S. D. Fitzgerald & Kingsley\'s Electric Machinery. McGraw-Hill.',

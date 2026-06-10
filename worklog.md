@@ -275,3 +275,130 @@ Stage Summary:
 - Creator names added to Hero section and Footer
 - University and program info (Program Studi Pendidikan Teknik Elektro, Universitas Negeri Medan) added
 - All changes follow the dark liquid glass design system
+
+---
+Task ID: 2
+Agent: full-stack-developer
+Task: Add Pengertian Generator Sinkron section
+
+Work Log:
+- Read worklog.md to understand prior work (Tasks 1, 3-a, 3-b, 3-c, 3-d, 14 completed)
+- Reviewed HeroAndEarlySections.tsx to understand existing section structure and styling patterns
+- Reviewed protection-data.ts to confirm generatorComponents data structure (name, desc, term fields)
+- Added `generatorComponents` import to HeroAndEarlySections.tsx alongside existing `protectionComponents` import
+- Added new section "Pengertian Generator Sinkron" (id="pengertian-generator") between Section 3 (Capaian Pembelajaran) and Section 4 (Dasar Generator Sinkron)
+- Section contains:
+  - Definisi: glass-card with info icon and explanation of synchronous generator definition
+  - Prinsip Kerja: 4-step visual flow with numbered cards and animated arrows (responsive: horizontal on sm+, vertical on mobile)
+    - Step 1: Rotor Diputar (cyan)
+    - Step 2: Medan Magnet Berputar (purple)
+    - Step 3: Arus Induksi di Stator (yellow)
+    - Step 4: Frekuensi ditentukan oleh kecepatan rotor & jumlah kutub (green)
+  - Komponen Utama: 6-component grid (1/2/3 cols responsive) from generatorComponents data
+    - Each card: numbered badge, component name, description, hover-revealed technical term using badge-ansi class
+    - Title attribute for native browser tooltip showing technical term
+  - "Lihat Diagram Proteksi →" button (glow-btn-green) scrolling to #diagram-proteksi
+- Styling consistent with existing sections: py-20 padding, max-w-6xl container, glass-card, section-title, section-subtitle
+- Lint check passed with no errors
+
+Stage Summary:
+- New "Pengertian Generator Sinkron" section added between Section 3 and Section 4
+- Section includes definition, 4-step principle flow, 6 component cards with hover tooltips, and navigation button
+- All existing sections remain unchanged
+- generatorComponents imported from @/data/protection-data
+- Lint passed, no errors
+
+---
+Task ID: 3
+Agent: full-stack-developer
+Task: Rewrite DiagramAndSimulation.tsx
+
+Work Log:
+- Read worklog.md to understand prior work (Tasks 1, 2, 3-a, 3-b, 3-c, 3-d, 14 completed)
+- Reviewed existing DiagramAndSimulation.tsx (1074 lines) to understand current implementation
+- Reviewed protection-data.ts for relayDetails (9 relays), faultSimulations (5 sims), normalParameters, EventLogEntry type
+- Reviewed globals.css for CSS classes: glass-card, electricity-flow, alarm-blink, glow-pulse, terminal-card, svg-tooltip, badge-ansi, table-glass, glow-btn variants
+- Complete rewrite of DiagramAndSimulation.tsx with:
+  - Updated DiagramState interface: relayAktif changed from string to string[] (supports multiple relays), flowColor changed to 'green'|'red'
+  - Added MonitoringData interface with voltage R/S/T, current, frequency, active/reactive power, power factor, load status
+  - Added audio system using Web Audio API:
+    - playRelayClick(): 800Hz square wave beep (100ms) when relay activates
+    - playTripSound(): 600→200Hz sawtooth descending tone (300ms) when CB trips
+    - playNotificationSound(): 400→800Hz sine ascending tone (200ms) when fault detected
+    - Audio muted by default, toggle button in simulation section
+  - Section 9: Diagram Proteksi Interaktif (id="diagram-proteksi")
+    - SVG viewBox expanded to 1200x600 to accommodate 9 relays
+    - 9 relays displayed in 3x3 grid: Row 1 (87G, 50/51, 46) | Row 2 (32, 40, 59) | Row 3 (27, 81U/O, 78)
+    - Each relay box ~110px wide, ~48px tall using relayDetails data
+    - CT/PT as dual input layer with signal lines going to relays
+    - Color-coded connection lines: green (#00ff88) power flow, orange (#ffaa00) CT/PT signals, blue (#00d4ff) trip signal, red (#ff4466) fault
+    - Color legend at bottom of SVG
+    - Interactive hover on relays shows tooltip with: ANSI code, name, monitors, characteristic curve, normal value, trip threshold
+    - Interactive hover on CT/PT shows tooltip with transformer ratio info
+    - Busbar with 3 loads (Beban 1-3) with individual status indicators based on fault simulation
+    - Status dashboard: 6 items (Generator Status, CB Status, Active Relay, Fault Type, System Action, System Status)
+    - electricity-flow CSS animation class for power flow animation
+  - Section 10: Logika Trip (id="logika-trip")
+    - Expanded from 6 to 9 terminal-style cards in 3-column responsive grid
+    - Added new cards: 46 (Negative Sequence), 59/27 (Over/Undervoltage), 81U/O (Under/Overfrequency), 78 (Out of Step), 87G (Differential)
+    - Each card uses .keyword, .string, .comment CSS classes
+    - Summary flow bar at bottom: Gangguan → CT/PT → Relai Aktif → Trip Coil → CB Trip → Generator Terputus
+  - Section 11: Simulasi Gangguan Otomatis (id="simulasi")
+    - 5 fault simulation buttons: Overcurrent, Loss of Excitation, Reverse Power, Negative Sequence, Short Circuit
+    - Reset Simulasi button (glow-btn-green)
+    - 4-phase animation sequence using chained setTimeouts with 1.2s intervals:
+      - Phase 1: Fault detected — flow red, alarm, monitoring data updates
+      - Phase 2: Relay activates — relay highlights, audio click
+      - Phase 3: CB trips — trip sound, load status updates
+      - Phase 4: Generator disconnected — safe state, green flow
+    - Phase progress bar with color-coded phases
+    - Audio mute/unmute toggle button
+    - Real-time Monitoring Panel (9 items in 3x3 grid):
+      - Tegangan Fasa R, S, T (kV) with color coding
+      - Arus (A), Frekuensi (Hz), Daya Aktif (MW), Daya Reaktif (MVAr), Faktor Daya (cos φ)
+      - Status Beban 1-3 (Aktif/Padam with green/red indicators)
+      - Values update from faultSimulations data during simulation
+    - Event Log panel:
+      - Color-coded entries: info (cyan), warning (yellow), fault (red), trip (orange), safe (green)
+      - Timestamped entries with auto-scroll
+      - Export CSV button downloads event log as .csv file
+    - Simulation results (after phase 4): 4 detail cards + trip sequence + conclusion
+    - Quick reference table (when no fault selected): 13-row faultsData table
+- Used 'use client' directive with useState, useCallback, useRef, useEffect
+- Timer management with useRef for proper cleanup
+- All data imported from @/data/protection-data (faultsData, relayDetails, faultSimulations, normalParameters, EventLogEntry)
+- All content in Indonesian language (Bahasa Indonesia)
+- Followed design system: dark liquid glass theme, glass-card, terminal-card, badge-ansi, glow-btn variants, electricity-flow animation
+- Lint check passed with no errors
+
+Stage Summary:
+- Complete rewrite of DiagramAndSimulation.tsx with enhanced 9-relay diagram, monitoring panel, event log, audio effects
+- Section 9: 3x3 relay grid with hover tooltips, color-coded signal lines, interactive CT/PT
+- Section 10: 9 terminal-style trip logic cards (expanded from 6)
+- Section 11: 5 fault simulations with 4-phase animation, real-time monitoring, event log with CSV export, audio effects
+- Lint passed, no errors
+---
+Task ID: main
+Agent: main
+Task: Add all new features - Pengertian Generator, enhanced diagram, simulation, monitoring, audio
+
+Work Log:
+- Updated protection-data.ts with new data: relayDetails (9 relays), faultSimulations (5 fault types), EventLogEntry, normalParameters, generatorComponents
+- Added Pengertian Generator Sinkron section to HeroAndEarlySections.tsx (between Capaian and Dasar Generator sections)
+- Complete rewrite of DiagramAndSimulation.tsx with 9 ANSI relays in 3x3 grid, color-coded lines, interactive hover, auto simulation, monitoring panel, audio effects, event log with CSV export
+- Updated page.tsx nav items to include "Pengertian Generator" and "Monitoring"
+- Updated footer with more interactive features listed
+- Lint passes, build succeeds, page renders correctly (240KB HTML with all features)
+
+Stage Summary:
+- Pengertian Generator Sinkron section with definisi, prinsip kerja (4-step flow), komponen utama (6 components with hover terms), link to diagram
+- Enhanced SVG diagram with 9 relays: 87G, 50/51, 46, 32, 40, 59, 27, 81U/O, 78
+- Color-coded connection lines: green=power flow, orange=CT/PT signal, blue=trip signal, red=fault
+- Interactive hover tooltips on relays (showing ANSI, name, monitors, curve, normal/trip values)
+- Interactive hover on CT/PT components
+- 5 fault simulation buttons with 4-phase animation
+- Real-time monitoring panel (voltage R/S/T, current, frequency, active/reactive power, power factor, load status)
+- Event log with color-coded entries and CSV export
+- Audio effects via Web Audio API (relay click, trip sound, notification) with mute toggle
+- Expanded Logika Trip section with 9 relay logic cards
+- All responsive, dark/neon theme consistent

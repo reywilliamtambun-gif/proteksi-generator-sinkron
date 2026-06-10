@@ -10,6 +10,7 @@ const navItems = [
   { id: 'beranda', label: 'Beranda' },
   { id: 'latar-belakang', label: 'Latar Belakang' },
   { id: 'capaian', label: 'Capaian Pembelajaran' },
+  { id: 'pengertian-generator', label: 'Pengertian Generator' },
   { id: 'dasar-generator', label: 'Dasar Generator' },
   { id: 'sistem-proteksi', label: 'Sistem Proteksi' },
   { id: 'komponen-proteksi', label: 'Komponen Proteksi' },
@@ -18,6 +19,7 @@ const navItems = [
   { id: 'diagram-proteksi', label: 'Diagram Proteksi' },
   { id: 'logika-trip', label: 'Logika Trip' },
   { id: 'simulasi', label: 'Simulasi Gangguan' },
+  { id: 'monitoring', label: 'Monitoring' },
   { id: 'studi-kasus', label: 'Studi Kasus' },
   { id: 'kalkulator', label: 'Kalkulator Relay' },
   { id: 'glosarium', label: 'Glosarium' },
@@ -253,7 +255,7 @@ export default function Home() {
               <div>
                 <h4 className="text-cyan-400 font-semibold mb-3 text-sm">Fitur Interaktif</h4>
                 <div className="space-y-1">
-                  {['Simulasi Gangguan', 'Kuis Interaktif', 'Kalkulator Relay', 'Diagram Proteksi'].map((f) => (
+                  {['Simulasi Gangguan', 'Diagram Proteksi Interaktif', 'Panel Monitoring', 'Kuis Interaktif', 'Kalkulator Relay', 'Audio Efek'].map((f) => (
                     <p key={f} className="text-white/40 text-xs">{f}</p>
                   ))}
                 </div>

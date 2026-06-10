@@ -1,6 +1,6 @@
 'use client';
 import { useState } from 'react';
-import { protectionComponents } from '@/data/protection-data';
+import { protectionComponents, generatorComponents } from '@/data/protection-data';
 
 /* ─────────────── tiny inline SVG icons ─────────────── */
 function GeneratorIcon({ className = '' }: { className?: string }) {
@@ -402,6 +402,122 @@ export default function HeroAndEarlySections() {
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══════════════ SECTION: PENGERTIAN GENERATOR SINKRON ═══════════════ */}
+      <section id="pengertian-generator" className="relative px-4 py-20">
+        <div className="max-w-6xl mx-auto">
+          <h2 className="section-title text-center">Pengertian Generator Sinkron</h2>
+          <p className="section-subtitle text-center">
+            Memahami definisi, prinsip kerja, dan komponen utama generator sinkron
+          </p>
+
+          {/* Definisi */}
+          <div className="glass-card p-6 mb-8">
+            <div className="flex items-center gap-2 mb-3">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+              <h3 className="text-cyan-300 font-semibold text-base">Definisi</h3>
+            </div>
+            <p className="text-white/80 text-sm sm:text-base leading-relaxed">
+              Generator sinkron adalah mesin listrik yang mengubah energi mekanik menjadi listrik AC
+              dengan rotor yang berputar secara sinkron terhadap frekuensi jaringan. Kecepatan putaran
+              rotor selalu tetap dan terkait secara langsung dengan frekuensi sistem serta jumlah kutub
+              magnet pada mesin. Generator ini banyak digunakan di pembangkit listrik karena mampu
+              menghasilkan daya besar dengan tegangan dan frekuensi yang stabil.
+            </p>
+          </div>
+
+          {/* Prinsip Kerja */}
+          <div className="glass-card p-6 mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffaa00" strokeWidth="2">
+                <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
+              </svg>
+              <h3 className="text-cyan-300 font-semibold text-base">Prinsip Kerja</h3>
+            </div>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-0">
+              {[
+                { step: 1, label: 'Rotor Diputar', color: '#00d4ff', icon: '⚙️' },
+                { step: 2, label: 'Medan Magnet Berputar', color: '#8844ff', icon: '🧲' },
+                { step: 3, label: 'Arus Induksi di Stator', color: '#ffaa00', icon: '⚡' },
+                { step: 4, label: 'Frekuensi ditentukan oleh kecepatan rotor & jumlah kutub', color: '#00ff88', icon: '📐' },
+              ].map((item, idx, arr) => (
+                <div key={item.step} className="flex items-center gap-2 sm:gap-0">
+                  <div
+                    className="flex flex-col items-center gap-1 px-4 sm:px-5 py-3 rounded-xl border min-w-[140px] sm:min-w-[160px]"
+                    style={{
+                      borderColor: item.color + '44',
+                      background: item.color + '11',
+                    }}
+                  >
+                    <span className="text-xl sm:text-2xl">{item.icon}</span>
+                    <span className="text-xs font-bold text-white/90 mb-0.5">Langkah {item.step}</span>
+                    <span className="text-[10px] sm:text-xs text-white/70 text-center leading-tight">{item.label}</span>
+                  </div>
+                  {idx < arr.length - 1 && (
+                    <svg width="28" height="14" viewBox="0 0 28 14" className="shrink-0 hidden sm:block mx-1">
+                      <line x1="0" y1="7" x2="22" y2="7" stroke={item.color} strokeWidth="2" className="electricity-flow" />
+                      <polygon points="22,3 28,7 22,11" fill={item.color} />
+                    </svg>
+                  )}
+                  {idx < arr.length - 1 && (
+                    <svg width="14" height="28" viewBox="0 0 14 28" className="shrink-0 sm:hidden my-1">
+                      <line x1="7" y1="0" x2="7" y2="22" stroke={item.color} strokeWidth="2" className="electricity-flow" />
+                      <polygon points="3,22 7,28 11,22" fill={item.color} />
+                    </svg>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Komponen Utama */}
+          <div className="glass-card p-6 mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00ff88" strokeWidth="2">
+                <rect x="2" y="2" width="20" height="20" rx="4" />
+                <line x1="7" y1="7" x2="17" y2="7" />
+                <line x1="7" y1="12" x2="17" y2="12" />
+                <line x1="7" y1="17" x2="12" y2="17" />
+              </svg>
+              <h3 className="text-cyan-300 font-semibold text-base">Komponen Utama</h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {generatorComponents.map((comp, idx) => (
+                <div
+                  key={comp.name}
+                  title={`Istilah Teknis: ${comp.term}`}
+                  className="group bg-white/5 border border-white/10 rounded-xl px-4 py-4 hover:bg-white/10 hover:border-cyan-400/30 transition-all duration-200 cursor-default"
+                >
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="flex-shrink-0 w-7 h-7 rounded-lg bg-cyan-400/15 text-cyan-300 text-xs font-bold flex items-center justify-center">
+                      {idx + 1}
+                    </span>
+                    <h4 className="text-white font-semibold text-sm">{comp.name}</h4>
+                  </div>
+                  <p className="text-white/60 text-xs sm:text-sm leading-relaxed mb-2">{comp.desc}</p>
+                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                    <span className="badge-ansi text-[10px]">{comp.term}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Link to Diagram */}
+          <div className="text-center">
+            <button
+              onClick={() => document.getElementById('diagram-proteksi')?.scrollIntoView({ behavior: 'smooth' })}
+              className="glow-btn-green text-sm sm:text-base"
+            >
+              Lihat Diagram Proteksi →
+            </button>
           </div>
         </div>
       </section>
