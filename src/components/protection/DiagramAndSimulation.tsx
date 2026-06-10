@@ -1356,16 +1356,37 @@ export default function DiagramAndSimulation() {
             </div>
           </div>
 
-          {/* Summary Flow */}
-          <div className="mt-6 glass-card p-4 text-center">
-            <p className="text-white/60 text-sm font-mono">
-              <span className="text-red-400">Gangguan</span> {' → '}
-              <span className="text-cyan-400">CT/PT</span> {' → '}
-              <span className="text-yellow-400">Relai Aktif</span> {' → '}
-              <span className="text-purple-400">Trip Coil</span> {' → '}
-              <span className="text-orange-400">CB Trip</span> {' → '}
-              <span className="text-green-400">Generator Terputus</span>
-            </p>
+          {/* Summary Flow - Visual Flowchart */}
+          <div className="mt-6 glass-card p-6">
+            <h4 className="text-white font-bold text-sm mb-4 text-center">Alur Kerja Sistem Proteksi</h4>
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {[
+                { label: 'Gangguan Terjadi', desc: 'Hubung singkat, arus lebih, dll.', color: '#ff4466', icon: '⚡' },
+                { label: 'CT/PT Mendeteksi', desc: 'Arus & tegangan berubah', color: '#00d4ff', icon: '📡' },
+                { label: 'Relay Menganalisis', desc: 'Membandingkan dengan setting', color: '#ffaa00', icon: '🧠' },
+                { label: 'Relay Aktif', desc: 'Mengirim sinyal trip', color: '#ff8800', icon: '🔔' },
+                { label: 'Trip Coil Bekerja', desc: 'Energize mekanisme CB', color: '#8844ff', icon: '⚡' },
+                { label: 'CB TRIP', desc: 'Rangkaian terbuka', color: '#ff6600', icon: '🔓' },
+                { label: 'Generator Aman', desc: 'Terputus dari sistem', color: '#00ff88', icon: '✅' },
+              ].map((step, idx, arr) => (
+                <div key={step.label} className="flex items-center gap-2">
+                  <div
+                    className="flex flex-col items-center px-3 py-2 rounded-lg border min-w-[80px]"
+                    style={{ borderColor: step.color + '44', background: step.color + '11' }}
+                  >
+                    <span className="text-lg">{step.icon}</span>
+                    <span className="text-[9px] font-bold text-center" style={{ color: step.color }}>{step.label}</span>
+                    <span className="text-[8px] text-white/40 text-center">{step.desc}</span>
+                  </div>
+                  {idx < arr.length - 1 && (
+                    <svg width="24" height="12" viewBox="0 0 24 12" className="shrink-0 hidden sm:block">
+                      <line x1="0" y1="6" x2="18" y2="6" stroke={step.color} strokeWidth="2" className="electricity-flow" />
+                      <polygon points="18,2 24,6 18,10" fill={step.color} />
+                    </svg>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         </div>
       </section>
@@ -1486,7 +1507,173 @@ export default function DiagramAndSimulation() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
             {/* Real-time Monitoring Panel */}
             <div className="glass-card p-4 sm:p-6">
-              <h3 className="text-lg font-bold text-cyan-400 mb-4">Panel Monitoring Real-Time</h3>
+              <h3 className="text-lg font-bold text-cyan-400 mb-4">Parameter Operasi</h3>
+
+              {/* Visual Gauges Row */}
+              <div className="grid grid-cols-3 gap-3 mb-4">
+                {/* Voltage Gauge */}
+                <div className="bg-white/5 border border-white/10 rounded-lg p-2 text-center">
+                  <svg viewBox="0 0 120 70" className="w-full">
+                    {/* Gauge background arc */}
+                    <path d="M 15 60 A 45 45 0 0 1 105 60" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="8" strokeLinecap="round" />
+                    {/* Green zone (9-12.5 kV) */}
+                    <path d="M 15 60 A 45 45 0 0 1 105 60" fill="none" stroke="rgba(0,255,136,0.25)" strokeWidth="8" strokeLinecap="round" strokeDasharray="0 141" />
+                    {/* Yellow warning zone markers */}
+                    <line x1="25" y1="55" x2="30" y2="48" stroke="rgba(255,170,0,0.4)" strokeWidth="1" />
+                    <line x1="95" y1="55" x2="90" y2="48" stroke="rgba(255,170,0,0.4)" strokeWidth="1" />
+                    {/* Needle */}
+                    {(() => {
+                      const avgV = (monitoringData.voltageR + monitoringData.voltageS + monitoringData.voltageT) / 3;
+                      const minV = 0, maxV = 16;
+                      const pct = Math.max(0, Math.min(1, (avgV - minV) / (maxV - minV)));
+                      const angle = -90 + pct * 180;
+                      const rad = (angle * Math.PI) / 180;
+                      const nx = 60 + 38 * Math.cos(rad);
+                      const ny = 60 + 38 * Math.sin(rad);
+                      const vColor = avgV >= 9.5 && avgV <= 12.5 ? '#00ff88' : avgV >= 8 || avgV <= 13.5 ? '#ffaa00' : '#ff4466';
+                      return (
+                        <>
+                          <line x1="60" y1="60" x2={nx} y2={ny} stroke={vColor} strokeWidth="2" strokeLinecap="round" style={{ transition: 'all 0.8s ease' }} />
+                          <circle cx="60" cy="60" r="4" fill={vColor} />
+                        </>
+                      );
+                    })()}
+                    {/* Labels */}
+                    <text x="12" y="68" fill="rgba(255,255,255,0.3)" fontSize="6">0</text>
+                    <text x="56" y="18" fill="rgba(255,255,255,0.3)" fontSize="6">8</text>
+                    <text x="100" y="68" fill="rgba(255,255,255,0.3)" fontSize="6">16</text>
+                    <text x="60" y="68" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold">kV</text>
+                  </svg>
+                  <div className="text-[10px] text-white/50 uppercase tracking-wider">Tegangan</div>
+                  <div className={`text-sm font-bold font-mono ${monColor((monitoringData.voltageR + monitoringData.voltageS + monitoringData.voltageT) / 3, normalParameters.voltageR, 0.15)}`}>
+                    {((monitoringData.voltageR + monitoringData.voltageS + monitoringData.voltageT) / 3).toFixed(1)} kV
+                  </div>
+                </div>
+
+                {/* Current Gauge */}
+                <div className="bg-white/5 border border-white/10 rounded-lg p-2 text-center">
+                  <svg viewBox="0 0 120 70" className="w-full">
+                    <path d="M 15 60 A 45 45 0 0 1 105 60" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="8" strokeLinecap="round" />
+                    <line x1="25" y1="55" x2="30" y2="48" stroke="rgba(255,170,0,0.4)" strokeWidth="1" />
+                    <line x1="95" y1="55" x2="90" y2="48" stroke="rgba(255,170,0,0.4)" strokeWidth="1" />
+                    {(() => {
+                      const minI = 0, maxI = 3000;
+                      const pct = Math.max(0, Math.min(1, (monitoringData.current - minI) / (maxI - minI)));
+                      const angle = -90 + pct * 180;
+                      const rad = (angle * Math.PI) / 180;
+                      const nx = 60 + 38 * Math.cos(rad);
+                      const ny = 60 + 38 * Math.sin(rad);
+                      const iColor = monitoringData.current <= 500 ? '#00ff88' : monitoringData.current <= 800 ? '#ffaa00' : '#ff4466';
+                      return (
+                        <>
+                          <line x1="60" y1="60" x2={nx} y2={ny} stroke={iColor} strokeWidth="2" strokeLinecap="round" style={{ transition: 'all 0.8s ease' }} />
+                          <circle cx="60" cy="60" r="4" fill={iColor} />
+                        </>
+                      );
+                    })()}
+                    <text x="12" y="68" fill="rgba(255,255,255,0.3)" fontSize="6">0</text>
+                    <text x="56" y="18" fill="rgba(255,255,255,0.3)" fontSize="6">1.5k</text>
+                    <text x="100" y="68" fill="rgba(255,255,255,0.3)" fontSize="6">3k</text>
+                    <text x="60" y="68" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold">A</text>
+                  </svg>
+                  <div className="text-[10px] text-white/50 uppercase tracking-wider">Arus</div>
+                  <div className={`text-sm font-bold font-mono ${monColor(monitoringData.current, normalParameters.current, 0.3)}`}>
+                    {monitoringData.current.toFixed(0)} A
+                  </div>
+                </div>
+
+                {/* Frequency Gauge */}
+                <div className="bg-white/5 border border-white/10 rounded-lg p-2 text-center">
+                  <svg viewBox="0 0 120 70" className="w-full">
+                    <path d="M 15 60 A 45 45 0 0 1 105 60" fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="8" strokeLinecap="round" />
+                    {/* Green zone markers (49-51 Hz) */}
+                    <line x1="38" y1="52" x2="40" y2="45" stroke="rgba(0,255,136,0.4)" strokeWidth="1" />
+                    <line x1="82" y1="52" x2="80" y2="45" stroke="rgba(0,255,136,0.4)" strokeWidth="1" />
+                    {(() => {
+                      const minF = 46, maxF = 54;
+                      const pct = Math.max(0, Math.min(1, (monitoringData.frequency - minF) / (maxF - minF)));
+                      const angle = -90 + pct * 180;
+                      const rad = (angle * Math.PI) / 180;
+                      const nx = 60 + 38 * Math.cos(rad);
+                      const ny = 60 + 38 * Math.sin(rad);
+                      const fColor = monitoringData.frequency >= 49 && monitoringData.frequency <= 51 ? '#00ff88' : monitoringData.frequency >= 47.5 && monitoringData.frequency <= 52.5 ? '#ffaa00' : '#ff4466';
+                      return (
+                        <>
+                          <line x1="60" y1="60" x2={nx} y2={ny} stroke={fColor} strokeWidth="2" strokeLinecap="round" style={{ transition: 'all 0.8s ease' }} />
+                          <circle cx="60" cy="60" r="4" fill={fColor} />
+                        </>
+                      );
+                    })()}
+                    <text x="12" y="68" fill="rgba(255,255,255,0.3)" fontSize="6">46</text>
+                    <text x="56" y="18" fill="rgba(255,255,255,0.3)" fontSize="6">50</text>
+                    <text x="98" y="68" fill="rgba(255,255,255,0.3)" fontSize="6">54</text>
+                    <text x="60" y="68" textAnchor="middle" fill="white" fontSize="8" fontWeight="bold">Hz</text>
+                  </svg>
+                  <div className="text-[10px] text-white/50 uppercase tracking-wider">Frekuensi</div>
+                  <div className={`text-sm font-bold font-mono ${monColor(monitoringData.frequency, normalParameters.frequency, 0.05)}`}>
+                    {monitoringData.frequency.toFixed(1)} Hz
+                  </div>
+                </div>
+              </div>
+
+              {/* Power Factor Bar */}
+              <div className="bg-white/5 border border-white/10 rounded-lg p-3 mb-4">
+                <div className="flex items-center justify-between mb-1">
+                  <span className="text-[10px] text-white/50 uppercase tracking-wider">Faktor Daya (cos φ)</span>
+                  <span className={`text-sm font-bold font-mono ${Math.abs(monitoringData.powerFactor) < 0.7 ? 'text-red-400' : Math.abs(monitoringData.powerFactor) < 0.85 ? 'text-yellow-400' : 'text-green-400'}`}>
+                    {monitoringData.powerFactor.toFixed(2)}
+                  </span>
+                </div>
+                <div className="w-full h-3 rounded-full bg-white/10 overflow-hidden relative">
+                  {/* Color segments */}
+                  <div className="absolute inset-0 flex">
+                    <div className="h-full bg-red-500/30" style={{ width: '50%' }} />
+                    <div className="h-full bg-yellow-500/30" style={{ width: '20%' }} />
+                    <div className="h-full bg-green-500/30" style={{ width: '30%' }} />
+                  </div>
+                  {/* Indicator needle */}
+                  <div
+                    className="absolute top-0 h-full w-1 bg-white rounded-full shadow-lg"
+                    style={{ left: `${Math.max(0, Math.min(100, Math.abs(monitoringData.powerFactor) * 100))}%`, transition: 'left 0.8s ease' }}
+                  />
+                </div>
+                <div className="flex justify-between text-[8px] text-white/30 mt-0.5">
+                  <span>0</span><span>0.5</span><span>0.7</span><span>0.85</span><span>1.0</span>
+                </div>
+              </div>
+
+              {/* Phase Voltage Bar Chart */}
+              <div className="bg-white/5 border border-white/10 rounded-lg p-3 mb-4">
+                <div className="text-[10px] text-white/50 uppercase tracking-wider mb-2">Tegangan Fasa R / S / T</div>
+                <div className="flex items-end gap-4 h-16">
+                  {[
+                    { label: 'R', value: monitoringData.voltageR, normal: normalParameters.voltageR, color: '#ff4444' },
+                    { label: 'S', value: monitoringData.voltageS, normal: normalParameters.voltageS, color: '#ffaa00' },
+                    { label: 'T', value: monitoringData.voltageT, normal: normalParameters.voltageT, color: '#4488ff' },
+                  ].map((phase) => {
+                    const pct = Math.max(5, Math.min(100, (phase.value / 16) * 100));
+                    const isNormal = Math.abs(phase.value - phase.normal) / phase.normal < 0.15;
+                    return (
+                      <div key={phase.label} className="flex-1 flex flex-col items-center">
+                        <span className="text-[9px] font-mono font-bold" style={{ color: isNormal ? '#00ff88' : '#ff4466' }}>
+                          {phase.value.toFixed(1)}
+                        </span>
+                        <div className="w-full bg-white/10 rounded-sm overflow-hidden h-12 relative">
+                          {/* Normal reference line */}
+                          <div className="absolute bottom-0 w-full border-t border-dashed border-white/20" style={{ height: `${(phase.normal / 16) * 100}%` }} />
+                          <div
+                            className="absolute bottom-0 w-full rounded-sm transition-all duration-700"
+                            style={{ height: `${pct}%`, background: isNormal ? `${phase.color}66` : `${phase.color}cc` }}
+                          />
+                        </div>
+                        <span className="text-[9px] font-bold mt-0.5" style={{ color: phase.color }}>{phase.label}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Detailed Number Grid */}
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {/* Tegangan Fasa R */}
                 <div className="bg-white/5 border border-white/10 rounded-lg p-3 text-center">

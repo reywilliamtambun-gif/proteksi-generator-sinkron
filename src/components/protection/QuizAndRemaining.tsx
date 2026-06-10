@@ -40,27 +40,57 @@ export default function QuizAndRemaining() {
   }[]>([]);
   const [historyLoaded, setHistoryLoaded] = useState(false);
 
-  // ======== ESSAY KEYWORD MATCHING ========
-  const essayKeywords: Record<number, { keywords: string[]; positive: string }> = {
+  // ======== ESSAY KEYWORD MATCHING (Enhanced for all 10 questions) ========
+  const essayKeywords: Record<number, { keywords: string[]; positive: string; hint: string }> = {
     0: {
-      keywords: ['proteksi', 'generator', 'sinkron', 'gangguan', 'kerusakan'],
+      keywords: ['proteksi', 'generator', 'sinkron', 'gangguan', 'kerusakan', 'mendeteksi', 'trip'],
       positive: 'Jawaban Anda menyebutkan konsep proteksi generator dengan baik.',
+      hint: 'Coba sebutkan fungsi proteksi (mendeteksi gangguan, trip CB), jenis gangguan, dan tujuan proteksi (mencegah kerusakan).',
     },
     1: {
-      keywords: ['diferensial', '87g', 'arus', 'masuk', 'keluar'],
+      keywords: ['diferensial', '87g', 'arus', 'masuk', 'keluar', 'stator', 'perbedaan', 'internal'],
       positive: 'Anda memahami prinsip relay diferensial dengan baik.',
+      hint: 'Relay 87G bekerja dengan membandingkan arus masuk dan keluar stator. Jika ada perbedaan signifikan, berarti ada gangguan internal.',
     },
     2: {
-      keywords: ['ct', 'pt', 'arus', 'tegangan', 'menurunkan', 'transformer'],
+      keywords: ['ct', 'pt', 'arus', 'tegangan', 'menurunkan', 'transformer', 'sekunder', 'primer'],
       positive: 'Anda memahami fungsi CT/PT dalam sistem proteksi.',
+      hint: 'CT menurunkan arus besar (primer) menjadi arus kecil (sekunder, biasanya 5A). PT menurunkan tegangan tinggi menjadi tegangan rendah (biasanya 110V).',
     },
     3: {
-      keywords: ['trip', 'coil', 'sinyal', 'relay', 'cb', 'circuit breaker'],
+      keywords: ['trip', 'coil', 'sinyal', 'relay', 'cb', 'circuit breaker', 'elektromagnetik', 'membuka'],
       positive: 'Anda memahami mekanisme trip coil dengan baik.',
+      hint: 'Trip coil menerima sinyal trip dari relay, menghasilkan gaya magnet, dan membuka mekanisme kunci CB.',
     },
     4: {
-      keywords: ['overcurrent', 'arus lebih', '50/51', 'setting', 'psm'],
+      keywords: ['overcurrent', 'arus lebih', '50', '51', 'setting', 'psm', 'instan', 'waktu tunda'],
       positive: 'Anda memahami relay arus lebih dengan baik.',
+      hint: 'Relay 50 bekerja instan, relay 51 bekerja dengan waktu tunda (IDMT). Keduanya mendeteksi arus melebihi setting.',
+    },
+    5: {
+      keywords: ['eksitasi', '40', 'impedansi', 'mho', 'rotor', 'medan magnet', 'sinkronisasi'],
+      positive: 'Anda memahami relay kehilangan eksitasi dengan baik.',
+      hint: 'Relay 40 mendeteksi kehilangan eksitasi melalui perubahan impedansi rotor yang masuk ke zona karakteristik mho.',
+    },
+    6: {
+      keywords: ['gangguan', 'deteksi', 'relay', 'trip coil', 'cb', 'circuit breaker', 'terputus', 'ct', 'pt'],
+      positive: 'Anda memahami alur kerja proteksi dengan baik.',
+      hint: 'Alur: Gangguan → CT/PT mendeteksi → Relay menganalisis → Trip coil energize → CB membuka → Generator terputus.',
+    },
+    7: {
+      keywords: ['beban', 'seimbang', 'urutan negatif', 'rotor', 'panas', '46', 'fasa'],
+      positive: 'Anda memahami dampak beban tidak seimbang dengan baik.',
+      hint: 'Beban tidak seimbang menyebabkan arus urutan negatif yang menginduksi arus pada rotor, menyebabkan pemanasan berlebih.',
+    },
+    8: {
+      keywords: ['64g', 'gangguan tanah', 'stator', 'bocor', 'isolasi', '51n'],
+      positive: 'Anda memahami fungsi relay 64G dengan baik.',
+      hint: 'Relay 64G mendeteksi gangguan tanah pada stator generator, biasanya menggunakan metode tegangan netral atau arus bocor.',
+    },
+    9: {
+      keywords: ['tanah', 'stator', 'analisis', 'gangguan', 'relay', '51n', '64g', 'isolasi', 'trip'],
+      positive: 'Anda mampu menganalisis gangguan tanah pada stator dengan baik.',
+      hint: 'Analisis: Identifikasi fasa yang terganggu, relay yang bekerja (51N/64G), dan tindakan proteksi (alarm/trip CB).',
     },
   };
 
@@ -74,21 +104,24 @@ export default function QuizAndRemaining() {
     const config = essayKeywords[idx];
     if (config) {
       const matchCount = config.keywords.filter((kw) => answer.includes(kw)).length;
-      if (matchCount >= 2) {
+      const matchPct = matchCount / config.keywords.length;
+      if (matchPct >= 0.4) {
         setEssayFeedback((prev) => ({ ...prev, [idx]: `✅ ${config.positive} (${matchCount}/${config.keywords.length} kata kunci cocok)` }));
-      } else if (matchCount === 1) {
-        setEssayFeedback((prev) => ({ ...prev, [idx]: `⚠️ Jawaban Anda menyebutkan salah satu konsep kunci. Coba perluas jawaban dengan istilah teknis yang lebih spesifik. (1/${config.keywords.length} kata kunci cocok)` }));
+      } else if (matchCount >= 1) {
+        setEssayFeedback((prev) => ({ ...prev, [idx]: `⚠️ Jawaban Anda menyebutkan beberapa konsep kunci. Coba perluas jawaban dengan istilah teknis yang lebih spesifik. (${matchCount}/${config.keywords.length} kata kunci cocok)\n💡 Petunjuk: ${config.hint}` }));
       } else {
-        setEssayFeedback((prev) => ({ ...prev, [idx]: '❌ Coba tambahkan istilah teknis yang lebih spesifik untuk menjawab pertanyaan ini.' }));
+        setEssayFeedback((prev) => ({ ...prev, [idx]: `❌ Coba tambahkan istilah teknis yang lebih spesifik untuk menjawab pertanyaan ini.\n💡 Petunjuk: ${config.hint}` }));
       }
     } else {
-      // Questions 5-9: no specific keywords defined, check for general technical terms
-      const generalTerms = ['relay', 'proteksi', 'generator', 'arus', 'tegangan', 'gangguan', 'trip', 'cb', 'stator', 'rotor'];
+      // Fallback for any undefined questions
+      const generalTerms = ['relay', 'proteksi', 'generator', 'arus', 'tegangan', 'gangguan', 'trip', 'cb', 'stator', 'rotor', 'sinkron', 'diferensial'];
       const generalMatch = generalTerms.filter((t) => answer.includes(t)).length;
-      if (generalMatch >= 2) {
+      if (generalMatch >= 3) {
         setEssayFeedback((prev) => ({ ...prev, [idx]: `✅ Jawaban Anda mengandung istilah teknis yang relevan. (${generalMatch} istilah terdeteksi)` }));
+      } else if (generalMatch >= 1) {
+        setEssayFeedback((prev) => ({ ...prev, [idx]: `⚠️ Jawaban Anda menyebutkan beberapa istilah teknis. Coba perluas dengan penjelasan yang lebih detail. (${generalMatch} istilah terdeteksi)` }));
       } else {
-        setEssayFeedback((prev) => ({ ...prev, [idx]: '❌ Coba tambahkan istilah teknis yang lebih spesifik untuk menjawab pertanyaan ini.' }));
+        setEssayFeedback((prev) => ({ ...prev, [idx]: '❌ Coba gunakan istilah teknis yang lebih spesifik seperti: relay, proteksi, gangguan, trip, arus, tegangan.' }));
       }
     }
   };
@@ -913,6 +946,22 @@ export default function QuizAndRemaining() {
           </h2>
           <p className="text-white/60 mb-8 text-lg">Ringkasan penting tentang sistem proteksi generator sinkron</p>
 
+          {/* Visual Summary Cards */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+            {[
+              { label: 'Jenis Gangguan', value: '13+', color: '#ff4466', icon: '⚡' },
+              { label: 'Relay Proteksi', value: '16', color: '#ffaa00', icon: '🧠' },
+              { label: 'Komponen Utama', value: '10', color: '#00d4ff', icon: '🔧' },
+              { label: 'Simulasi', value: '10', color: '#00ff88', icon: '▶️' },
+            ].map((stat) => (
+              <div key={stat.label} className="glass-card p-4 text-center" style={{ borderTop: `3px solid ${stat.color}` }}>
+                <span className="text-2xl">{stat.icon}</span>
+                <div className="text-2xl font-bold mt-1" style={{ color: stat.color }}>{stat.value}</div>
+                <div className="text-[10px] text-white/50 uppercase tracking-wider">{stat.label}</div>
+              </div>
+            ))}
+          </div>
+
           <div className="glass-card p-8 md:p-10">
             <div className="space-y-5 text-white/85 leading-relaxed text-base md:text-lg">
               <p>
@@ -932,7 +981,22 @@ export default function QuizAndRemaining() {
               </p>
             </div>
 
-            <div className="mt-8 flex items-center gap-3 p-4 rounded-lg bg-gradient-to-r from-cyan-400/10 via-blue-400/10 to-purple-400/10 border border-cyan-400/20">
+            {/* Key Takeaway Cards */}
+            <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {[
+                { title: 'Deteksi Cepat', desc: 'CT/PT mendeteksi perubahan arus dan tegangan secara real-time', icon: '📡', color: '#00d4ff' },
+                { title: 'Proteksi Selektif', desc: 'Setiap relay bekerja sesuai kode ANSI dan gangguan spesifiknya', icon: '🎯', color: '#ffaa00' },
+                { title: 'Aksi Andal', desc: 'Trip coil → CB trip → Generator terputus, semuanya otomatis', icon: '✅', color: '#00ff88' },
+              ].map((item) => (
+                <div key={item.title} className="p-4 rounded-lg bg-white/5 border border-white/10" style={{ borderLeft: `3px solid ${item.color}` }}>
+                  <span className="text-xl">{item.icon}</span>
+                  <h4 className="text-white font-bold text-sm mt-2">{item.title}</h4>
+                  <p className="text-white/60 text-xs mt-1">{item.desc}</p>
+                </div>
+              ))}
+            </div>
+
+            <div className="mt-6 flex items-center gap-3 p-4 rounded-lg bg-gradient-to-r from-cyan-400/10 via-blue-400/10 to-purple-400/10 border border-cyan-400/20">
               <svg className="w-6 h-6 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
               </svg>
