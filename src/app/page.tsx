@@ -91,9 +91,9 @@ export default function Home() {
   }, []);
 
   return (
-    <div className={isLightMode ? 'light-mode' : ''}>
+    <div className={`min-h-screen flex flex-col ${isLightMode ? 'light-mode' : ''}`}>
       {/* Background */}
-      <div className="protection-bg">
+      <div className="protection-bg flex flex-col flex-1">
         {/* Scroll Progress Bar */}
         <div
           className="scroll-progress"

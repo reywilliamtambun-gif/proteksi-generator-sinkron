@@ -832,3 +832,230 @@ body {
     padding: 8px !important;
   }
 }
+
+/* ===== COMPREHENSIVE LIGHT MODE OVERRIDES ===== */
+
+/* Text colors - override white-based text for light mode */
+.light-mode .protection-bg {
+  color: #1a2a4a;
+}
+
+.light-mode .protection-bg h1,
+.light-mode .protection-bg h2,
+.light-mode .protection-bg h3,
+.light-mode .protection-bg h4 {
+  color: #0a1a3a;
+}
+
+/* Override text-white utility in light mode */
+.light-mode .protection-bg [class*="text-white"] {
+  color: #1a2a4a !important;
+}
+
+.light-mode .protection-bg [class*="text-white/90"] {
+  color: rgba(10, 26, 58, 0.9) !important;
+}
+
+.light-mode .protection-bg [class*="text-white/80"] {
+  color: rgba(10, 26, 58, 0.8) !important;
+}
+
+.light-mode .protection-bg [class*="text-white/70"] {
+  color: rgba(10, 26, 58, 0.7) !important;
+}
+
+.light-mode .protection-bg [class*="text-white/60"] {
+  color: rgba(10, 26, 58, 0.6) !important;
+}
+
+.light-mode .protection-bg [class*="text-white/50"] {
+  color: rgba(10, 26, 58, 0.5) !important;
+}
+
+.light-mode .protection-bg [class*="text-white/40"] {
+  color: rgba(10, 26, 58, 0.4) !important;
+}
+
+.light-mode .protection-bg [class*="text-white/30"] {
+  color: rgba(10, 26, 58, 0.3) !important;
+}
+
+/* Override text-cyan-300 in light mode */
+.light-mode .protection-bg [class*="text-cyan-300"] {
+  color: #0077aa !important;
+}
+
+.light-mode .protection-bg [class*="text-cyan-400"] {
+  color: #0088cc !important;
+}
+
+/* Purple text in light mode */
+.light-mode .protection-bg [class*="text-purple-300"] {
+  color: #7733aa !important;
+}
+
+.light-mode .protection-bg [class*="text-purple-400"] {
+  color: #6622aa !important;
+}
+
+/* Green text in light mode */
+.light-mode .protection-bg [class*="text-green-400"] {
+  color: #008844 !important;
+}
+
+/* Red text in light mode */
+.light-mode .protection-bg [class*="text-red-400"] {
+  color: #cc2244 !important;
+}
+
+/* Yellow text in light mode */
+.light-mode .protection-bg [class*="text-yellow-400"] {
+  color: #aa7700 !important;
+}
+
+/* Orange text in light mode */
+.light-mode .protection-bg [class*="text-orange-400"] {
+  color: #aa5500 !important;
+}
+
+/* Gradient text in light mode */
+.light-mode .section-title {
+  background: linear-gradient(135deg, #0066aa, #0044cc, #6622aa);
+  -webkit-background-clip: text;
+  background-clip: text;
+}
+
+/* Input fields in light mode */
+.light-mode .protection-bg input,
+.light-mode .protection-bg select,
+.light-mode .protection-bg textarea {
+  background: rgba(255, 255, 255, 0.8) !important;
+  border-color: rgba(0, 50, 100, 0.15) !important;
+  color: #1a2a4a !important;
+}
+
+.light-mode .protection-bg input::placeholder,
+.light-mode .protection-bg textarea::placeholder {
+  color: rgba(10, 26, 58, 0.3) !important;
+}
+
+/* Navbar text in light mode */
+.light-mode .glass-nav span,
+.light-mode .glass-nav button {
+  color: #1a2a4a;
+}
+
+.light-mode .glass-nav [class*="text-white/60"] {
+  color: rgba(10, 26, 58, 0.6) !important;
+}
+
+.light-mode .glass-nav [class*="text-white/70"] {
+  color: rgba(10, 26, 58, 0.7) !important;
+}
+
+/* Active nav item in light mode */
+.light-mode .glass-nav [class*="bg-cyan-500/20"] {
+  background: rgba(0, 100, 200, 0.1) !important;
+  border-color: rgba(0, 100, 200, 0.2) !important;
+  color: #0066cc !important;
+}
+
+/* Background fills in light mode */
+.light-mode .protection-bg [class*="bg-white/5"] {
+  background: rgba(0, 50, 100, 0.04) !important;
+}
+
+.light-mode .protection-bg [class*="bg-white/10"] {
+  background: rgba(0, 50, 100, 0.06) !important;
+}
+
+/* Footer in light mode */
+.light-mode footer {
+  background: rgba(220, 230, 245, 0.6) !important;
+  border-color: rgba(0, 50, 100, 0.1) !important;
+}
+
+.light-mode footer h3,
+.light-mode footer h4 {
+  color: #0a1a3a !important;
+}
+
+.light-mode footer p,
+.light-mode footer span {
+  color: rgba(10, 26, 58, 0.5) !important;
+}
+
+.light-mode footer button {
+  color: rgba(10, 26, 58, 0.5) !important;
+}
+
+.light-mode footer button:hover {
+  color: #0088cc !important;
+}
+
+/* Scrollbar in light mode */
+.light-mode ::-webkit-scrollbar-track {
+  background: rgba(0, 50, 100, 0.05);
+}
+
+.light-mode ::-webkit-scrollbar-thumb {
+  background: rgba(0, 100, 200, 0.2);
+}
+
+.light-mode ::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 100, 200, 0.35);
+}
+
+/* Back to top in light mode */
+.light-mode .back-to-top {
+  background: linear-gradient(135deg, #0088cc, #0066aa);
+}
+
+/* SVG diagram text in light mode */
+.light-mode .protection-bg svg text {
+  fill: rgba(10, 26, 58, 0.7);
+}
+
+.light-mode .protection-bg svg text[fill="white"],
+.light-mode .protection-bg svg text[fill="#ffffff"] {
+  fill: #1a2a4a;
+}
+
+/* Monitor gauge in light mode */
+.light-mode .monitor-gauge {
+  background: rgba(255, 255, 255, 0.6);
+  border-color: rgba(0, 50, 100, 0.1);
+}
+
+.light-mode .monitor-gauge-label {
+  color: rgba(10, 26, 58, 0.5);
+}
+
+.light-mode .monitor-gauge-unit {
+  color: rgba(10, 26, 58, 0.35);
+}
+
+/* Tutorial panel in light mode */
+.light-mode .tutorial-panel {
+  background: rgba(255, 255, 255, 0.9);
+  border-color: rgba(200, 150, 0, 0.3);
+}
+
+/* SVG tooltip in light mode */
+.light-mode .svg-tooltip,
+.light-mode .svg-tooltip-enhanced {
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(0, 100, 200, 0.2);
+  color: #1a2a4a;
+}
+
+/* Quiz option in light mode */
+.light-mode .quiz-option {
+  background: rgba(0, 50, 100, 0.04);
+  border-color: rgba(0, 50, 100, 0.12);
+}
+
+.light-mode .quiz-option:hover {
+  background: rgba(0, 100, 200, 0.08);
+  border-color: rgba(0, 100, 200, 0.2);
+}

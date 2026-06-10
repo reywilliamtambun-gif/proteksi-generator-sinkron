@@ -469,14 +469,27 @@ export default function HeroAndEarlySections() {
 
                 {/* Stator (outer ring with winding slots) */}
                 <circle cx="160" cy="160" r="120" fill="rgba(168,85,247,0.08)" stroke="#a855f7" strokeWidth="2.5" />
-                {/* Stator winding slots */}
-                {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((angle) => (
+                {/* Stator winding slots - pre-computed coords to avoid hydration mismatch */}
+                {[
+                  { angle: 0, x1: 255, y1: 160, x2: 278, y2: 160 },
+                  { angle: 30, x1: 242.27, y1: 207.5, x2: 262.14, y2: 219 },
+                  { angle: 60, x1: 207.5, y1: 242.27, x2: 219, y2: 262.14 },
+                  { angle: 90, x1: 160, y1: 255, x2: 160, y2: 278 },
+                  { angle: 120, x1: 112.5, y1: 242.27, x2: 101, y2: 262.14 },
+                  { angle: 150, x1: 77.73, y1: 207.5, x2: 57.86, y2: 219 },
+                  { angle: 180, x1: 65, y1: 160, x2: 42, y2: 160 },
+                  { angle: 210, x1: 77.73, y1: 112.5, x2: 57.86, y2: 101 },
+                  { angle: 240, x1: 112.5, y1: 77.73, x2: 101, y2: 57.86 },
+                  { angle: 270, x1: 160, y1: 65, x2: 160, y2: 42 },
+                  { angle: 300, x1: 207.5, y1: 77.73, x2: 219, y2: 57.86 },
+                  { angle: 330, x1: 242.27, y1: 112.5, x2: 262.14, y2: 101 },
+                ].map((slot) => (
                   <line
-                    key={`slot-${angle}`}
-                    x1={160 + 95 * Math.cos((angle * Math.PI) / 180)}
-                    y1={160 + 95 * Math.sin((angle * Math.PI) / 180)}
-                    x2={160 + 118 * Math.cos((angle * Math.PI) / 180)}
-                    y2={160 + 118 * Math.sin((angle * Math.PI) / 180)}
+                    key={`slot-${slot.angle}`}
+                    x1={slot.x1}
+                    y1={slot.y1}
+                    x2={slot.x2}
+                    y2={slot.y2}
                     stroke="#a855f7"
                     strokeWidth="3"
                     strokeLinecap="round"
