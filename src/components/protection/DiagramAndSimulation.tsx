@@ -153,6 +153,8 @@ export default function DiagramAndSimulation() {
   const [rotorAngle, setRotorAngle] = useState(0);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
   const [tutorialStep, setTutorialStep] = useState(0);
+  const [clickedComponent, setClickedComponent] = useState<string | null>(null);
+  const [clickedRelay, setClickedRelay] = useState<string | null>(null);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const eventLogRef = useRef<HTMLDivElement>(null);
 
@@ -188,6 +190,26 @@ export default function DiagramAndSimulation() {
       eventLogRef.current.scrollTop = eventLogRef.current.scrollHeight;
     }
   }, [eventLog]);
+
+  // Save simulation log to DB when simulation completes
+  useEffect(() => {
+    if (simulationPhase === 4 && selectedFault) {
+      const sim = faultSimulations.find((s) => s.faultId === selectedFault);
+      if (sim) {
+        fetch('/api/simulation-logs', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            faultType: sim.name,
+            relayActivated: sim.affectedRelayAnsi.join(', '),
+            cbStatus: 'TRIP',
+            eventLog: eventLog,
+            duration: 4800,
+          }),
+        }).catch(() => { /* silently fail */ });
+      }
+    }
+  }, [simulationPhase, selectedFault]);
 
   // Add event helper
   const addEvent = useCallback((event: string, type: EventLogEntry['type']) => {
@@ -721,6 +743,7 @@ export default function DiagramAndSimulation() {
                 id="svg-generator"
                 onMouseEnter={(e) => handleComponentHover('generator', e)}
                 onMouseLeave={handleComponentLeave}
+                onClick={() => setClickedComponent('generator')}
                 className="cursor-pointer"
                 filter={currentTutorialStep?.highlightComponent === 'generator' ? 'url(#tutorialHighlight)' : undefined}
               >
@@ -753,6 +776,7 @@ export default function DiagramAndSimulation() {
                 id="svg-ctpt"
                 onMouseEnter={(e) => handleComponentHover('ct', e)}
                 onMouseLeave={handleComponentLeave}
+                onClick={() => setClickedComponent('ct')}
                 className="cursor-pointer"
                 filter={currentTutorialStep?.highlightComponent === 'ctpt' ? 'url(#tutorialHighlight)' : undefined}
               >
@@ -767,6 +791,7 @@ export default function DiagramAndSimulation() {
               <g
                 onMouseEnter={(e) => handleComponentHover('pt', e)}
                 onMouseLeave={handleComponentLeave}
+                onClick={() => setClickedComponent('pt')}
                 className="cursor-pointer"
               >
                 <circle cx="255" cy="370" r="24" fill="rgba(0,20,50,0.6)" stroke="#8844ff" strokeWidth="2" filter="url(#componentGlow)" />
@@ -811,6 +836,7 @@ export default function DiagramAndSimulation() {
                       key={relay.ansi}
                       onMouseEnter={(e) => handleRelayMouseEnter(relay.ansi, e)}
                       onMouseLeave={handleRelayMouseLeave}
+                      onClick={() => setClickedRelay(relay.ansi)}
                       className="cursor-pointer"
                     >
                       {/* Relay box */}
@@ -880,6 +906,7 @@ export default function DiagramAndSimulation() {
                 id="svg-tripcoil"
                 onMouseEnter={(e) => handleComponentHover('tripcoil', e)}
                 onMouseLeave={handleComponentLeave}
+                onClick={() => setClickedComponent('tripcoil')}
                 className="cursor-pointer"
                 filter={currentTutorialStep?.highlightComponent === 'tripcoil' ? 'url(#tutorialHighlight)' : undefined}
               >
@@ -909,6 +936,7 @@ export default function DiagramAndSimulation() {
                 id="svg-cb"
                 onMouseEnter={(e) => handleComponentHover('cb', e)}
                 onMouseLeave={handleComponentLeave}
+                onClick={() => setClickedComponent('cb')}
                 className="cursor-pointer"
                 filter={currentTutorialStep?.highlightComponent === 'cb' ? 'url(#tutorialHighlight)' : undefined}
               >
@@ -943,6 +971,7 @@ export default function DiagramAndSimulation() {
                 id="svg-busbar"
                 onMouseEnter={(e) => handleComponentHover('busbar', e)}
                 onMouseLeave={handleComponentLeave}
+                onClick={() => setClickedComponent('busbar')}
                 className="cursor-pointer"
                 filter={currentTutorialStep?.highlightComponent === 'busbar' ? 'url(#tutorialHighlight)' : undefined}
               >
@@ -998,6 +1027,93 @@ export default function DiagramAndSimulation() {
               <text x="915" y="240" textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize="8" fontWeight="bold">CB</text>
               <text x="1050" y="140" textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize="8" fontWeight="bold">BUSBAR</text>
             </svg>
+
+            {/* Persistent click pop-up for components */}
+            {clickedComponent && (() => {
+              const basic = svgComponentInfo[clickedComponent];
+              const enhanced = getEnhancedInfo(clickedComponent);
+              if (!basic) return null;
+              return (
+                <div
+                  className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+                  onClick={() => setClickedComponent(null)}
+                >
+                  <div
+                    className="glass-card p-6 max-w-md w-[90%] relative"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={() => setClickedComponent(null)}
+                      className="absolute top-3 right-3 w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/20 transition-all"
+                    >
+                      ✕
+                    </button>
+                    <div className="text-cyan-400 font-bold text-lg mb-2">{basic.name}</div>
+                    <div className="text-white/80 text-sm mb-3">{enhanced?.description || basic.desc}</div>
+                    {enhanced && enhanced.parameters.length > 0 && (
+                      <div className="mb-3">
+                        <div className="text-white/50 text-[10px] uppercase tracking-wider mb-1">Parameters</div>
+                        <div className="bg-white/5 rounded-lg p-3">
+                          <table className="w-full text-sm">
+                            <tbody>
+                              {enhanced.parameters.map((p, i) => (
+                                <tr key={i} className="border-b border-white/5 last:border-0">
+                                  <td className="text-white/60 py-1 pr-3">{p.label}</td>
+                                  <td className="text-cyan-400 font-mono py-1 pr-2">{p.normalValue}</td>
+                                  <td className="text-white/40 py-1">{p.unit}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    )}
+                    {enhanced && (
+                      <div className="flex gap-4 text-xs">
+                        <span className="px-2 py-1 rounded bg-green-400/10 text-green-400">Normal: {enhanced.normalStatus}</span>
+                        <span className="px-2 py-1 rounded bg-red-400/10 text-red-400">Fault: {enhanced.faultStatus}</span>
+                      </div>
+                    )}
+                    <div className="mt-3 text-white/30 text-xs">Klik di luar untuk menutup</div>
+                  </div>
+                </div>
+              );
+            })()}
+
+            {/* Persistent click pop-up for relays */}
+            {clickedRelay && (() => {
+              const relay = relayDetails.find((r) => r.ansi === clickedRelay);
+              if (!relay) return null;
+              return (
+                <div
+                  className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm"
+                  onClick={() => setClickedRelay(null)}
+                >
+                  <div
+                    className="glass-card p-6 max-w-md w-[90%] relative"
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <button
+                      onClick={() => setClickedRelay(null)}
+                      className="absolute top-3 right-3 w-8 h-8 rounded-lg bg-white/10 flex items-center justify-center text-white/60 hover:text-white hover:bg-white/20 transition-all"
+                    >
+                      ✕
+                    </button>
+                    <div className="flex items-center gap-3 mb-3">
+                      <span className="badge-ansi text-lg px-3 py-1">{relay.ansi}</span>
+                      <span className="text-white font-bold text-lg">{relay.name}</span>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div><span className="text-white/50">Memantau:</span> <span className="text-white/80">{relay.monitors}</span></div>
+                      <div><span className="text-white/50">Kurva:</span> <span className="text-white/80">{relay.curve}</span></div>
+                      <div><span className="text-white/50">Normal:</span> <span className="text-green-400">{relay.normalValue} {relay.unit}</span></div>
+                      <div><span className="text-white/50">Trip:</span> <span className="text-red-400">{relay.tripValue} {relay.unit}</span></div>
+                    </div>
+                    <div className="mt-3 text-white/30 text-xs">Klik di luar untuk menutup</div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* Tooltip for relays */}
             {hoveredRelay && tooltipPos && (() => {
@@ -1287,6 +1403,15 @@ export default function DiagramAndSimulation() {
             >
               Reset Simulasi
             </button>
+            {selectedFault && simulationPhase >= 4 && (
+              <button
+                onClick={() => selectFault(selectedFault)}
+                className="glow-btn text-sm"
+                style={{ background: 'linear-gradient(135deg, #00aaff, #0066ff)' }}
+              >
+                ↻ Replay Simulasi
+              </button>
+            )}
           </div>
 
           {/* Phase indicator */}
@@ -1585,6 +1710,241 @@ export default function DiagramAndSimulation() {
               </table>
             </div>
           )}
+        </div>
+      </section>
+
+      {/* ====================== SECTION 11b: MONITORING REAL-TIME (DEDICATED) ====================== */}
+      <section id="monitoring" className="py-16 px-4">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="section-title">Panel Monitoring Real-Time</h2>
+          <p className="section-subtitle">
+            Pantau parameter operasi generator secara real-time — tegangan, arus, frekuensi, daya, dan faktor daya
+          </p>
+
+          {/* System Status Banner */}
+          <div className={`mb-6 p-4 rounded-xl border ${
+            diagramState.status === 'normal'
+              ? 'bg-green-500/10 border-green-500/30'
+              : diagramState.status === 'gangguan'
+              ? 'bg-red-500/10 border-red-500/30'
+              : 'bg-yellow-500/10 border-yellow-500/30'
+          }`}>
+            <div className="flex items-center justify-between flex-wrap gap-3">
+              <div className="flex items-center gap-3">
+                <div className={`w-4 h-4 rounded-full ${
+                  diagramState.status === 'normal' ? 'bg-green-500' : diagramState.status === 'gangguan' ? 'bg-red-500 alarm-blink' : 'bg-yellow-500'
+                }`} />
+                <span className="text-white font-bold text-lg">
+                  {diagramState.status === 'normal' ? 'SISTEM NORMAL' : diagramState.status === 'gangguan' ? 'GANGGUAN TERDETEKSI' : 'GENERATOR TERPUTUS'}
+                </span>
+              </div>
+              <div className="flex items-center gap-4 text-sm">
+                <span className="text-white/50">CB: <span className={diagramState.cbStatus === 'ON' ? 'text-green-400 font-bold' : 'text-red-400 font-bold'}>{diagramState.cbStatus}</span></span>
+                <span className="text-white/50">Relay: <span className={diagramState.relayAktif.length > 0 ? 'text-red-400 font-bold' : 'text-cyan-400'}>{diagramState.relayAktif.length > 0 ? diagramState.relayAktif.join(', ') : 'Tidak Ada'}</span></span>
+              </div>
+            </div>
+          </div>
+
+          {/* Monitoring Gauge Grid */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 mb-6">
+            {/* Voltage R */}
+            <div className="monitor-gauge">
+              <div className="text-[10px] text-white/50 uppercase tracking-wider mb-1">Tegangan R</div>
+              <div className={`text-2xl font-bold font-mono ${monColor(monitoringData.voltageR, normalParameters.voltageR, 0.15)}`}>
+                {monitoringData.voltageR.toFixed(1)}
+              </div>
+              <div className="text-xs text-white/40">kV</div>
+              <div className="mt-2 h-1 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    Math.abs(monitoringData.voltageR - normalParameters.voltageR) / normalParameters.voltageR > 0.15 ? 'bg-red-500' :
+                    Math.abs(monitoringData.voltageR - normalParameters.voltageR) / normalParameters.voltageR > 0.07 ? 'bg-yellow-500' : 'bg-green-500'
+                  }`}
+                  style={{ width: `${Math.min((monitoringData.voltageR / (normalParameters.voltageR * 1.3)) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Voltage S */}
+            <div className="monitor-gauge">
+              <div className="text-[10px] text-white/50 uppercase tracking-wider mb-1">Tegangan S</div>
+              <div className={`text-2xl font-bold font-mono ${monColor(monitoringData.voltageS, normalParameters.voltageS, 0.15)}`}>
+                {monitoringData.voltageS.toFixed(1)}
+              </div>
+              <div className="text-xs text-white/40">kV</div>
+              <div className="mt-2 h-1 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    Math.abs(monitoringData.voltageS - normalParameters.voltageS) / normalParameters.voltageS > 0.15 ? 'bg-red-500' :
+                    Math.abs(monitoringData.voltageS - normalParameters.voltageS) / normalParameters.voltageS > 0.07 ? 'bg-yellow-500' : 'bg-green-500'
+                  }`}
+                  style={{ width: `${Math.min((monitoringData.voltageS / (normalParameters.voltageS * 1.3)) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Voltage T */}
+            <div className="monitor-gauge">
+              <div className="text-[10px] text-white/50 uppercase tracking-wider mb-1">Tegangan T</div>
+              <div className={`text-2xl font-bold font-mono ${monColor(monitoringData.voltageT, normalParameters.voltageT, 0.15)}`}>
+                {monitoringData.voltageT.toFixed(1)}
+              </div>
+              <div className="text-xs text-white/40">kV</div>
+              <div className="mt-2 h-1 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    Math.abs(monitoringData.voltageT - normalParameters.voltageT) / normalParameters.voltageT > 0.15 ? 'bg-red-500' :
+                    Math.abs(monitoringData.voltageT - normalParameters.voltageT) / normalParameters.voltageT > 0.07 ? 'bg-yellow-500' : 'bg-green-500'
+                  }`}
+                  style={{ width: `${Math.min((monitoringData.voltageT / (normalParameters.voltageT * 1.3)) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Current */}
+            <div className="monitor-gauge">
+              <div className="text-[10px] text-white/50 uppercase tracking-wider mb-1">Arus Total</div>
+              <div className={`text-2xl font-bold font-mono ${monColor(monitoringData.current, normalParameters.current, 0.3)}`}>
+                {monitoringData.current.toFixed(0)}
+              </div>
+              <div className="text-xs text-white/40">A</div>
+              <div className="mt-2 h-1 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    Math.abs(monitoringData.current - normalParameters.current) / normalParameters.current > 0.3 ? 'bg-red-500' :
+                    Math.abs(monitoringData.current - normalParameters.current) / normalParameters.current > 0.15 ? 'bg-yellow-500' : 'bg-green-500'
+                  }`}
+                  style={{ width: `${Math.min((monitoringData.current / (normalParameters.current * 2)) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+
+            {/* Frequency */}
+            <div className="monitor-gauge">
+              <div className="text-[10px] text-white/50 uppercase tracking-wider mb-1">Frekuensi</div>
+              <div className={`text-2xl font-bold font-mono ${monColor(monitoringData.frequency, normalParameters.frequency, 0.05)}`}>
+                {monitoringData.frequency.toFixed(1)}
+              </div>
+              <div className="text-xs text-white/40">Hz</div>
+              <div className="mt-2 h-1 bg-white/10 rounded-full overflow-hidden">
+                <div
+                  className={`h-full rounded-full transition-all duration-500 ${
+                    Math.abs(monitoringData.frequency - normalParameters.frequency) / normalParameters.frequency > 0.05 ? 'bg-red-500' :
+                    Math.abs(monitoringData.frequency - normalParameters.frequency) / normalParameters.frequency > 0.02 ? 'bg-yellow-500' : 'bg-green-500'
+                  }`}
+                  style={{ width: `${Math.min((monitoringData.frequency / (normalParameters.frequency * 1.1)) * 100, 100)}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Power & PF Row */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
+            {/* Active Power */}
+            <div className="glass-card p-4 text-center">
+              <div className="text-[10px] text-white/50 uppercase tracking-wider mb-1">Daya Aktif</div>
+              <div className={`text-xl font-bold font-mono ${monitoringData.activePower < 0 ? 'text-red-400' : monColor(monitoringData.activePower, normalParameters.activePower, 0.3)}`}>
+                {monitoringData.activePower.toFixed(1)}
+              </div>
+              <div className="text-xs text-white/40">MW</div>
+            </div>
+
+            {/* Reactive Power */}
+            <div className="glass-card p-4 text-center">
+              <div className="text-[10px] text-white/50 uppercase tracking-wider mb-1">Daya Reaktif</div>
+              <div className={`text-xl font-bold font-mono ${monitoringData.reactivePower < 0 ? 'text-red-400' : 'text-yellow-400'}`}>
+                {monitoringData.reactivePower.toFixed(1)}
+              </div>
+              <div className="text-xs text-white/40">MVAr</div>
+            </div>
+
+            {/* Power Factor */}
+            <div className="glass-card p-4 text-center">
+              <div className="text-[10px] text-white/50 uppercase tracking-wider mb-1">Faktor Daya</div>
+              <div className={`text-xl font-bold font-mono ${Math.abs(monitoringData.powerFactor) < 0.7 ? 'text-red-400' : Math.abs(monitoringData.powerFactor) < 0.85 ? 'text-yellow-400' : 'text-green-400'}`}>
+                {monitoringData.powerFactor.toFixed(2)}
+              </div>
+              <div className="text-xs text-white/40">cos φ</div>
+            </div>
+
+            {/* Load Status */}
+            <div className="glass-card p-4">
+              <div className="text-[10px] text-white/50 uppercase tracking-wider mb-2 text-center">Status Beban</div>
+              <div className="space-y-1.5">
+                {[
+                  { label: 'Beban 1', active: monitoringData.load1 },
+                  { label: 'Beban 2', active: monitoringData.load2 },
+                  { label: 'Beban 3', active: monitoringData.load3 },
+                ].map((l) => (
+                  <div key={l.label} className="flex items-center gap-2 text-xs">
+                    <div className={`w-2.5 h-2.5 rounded-full ${l.active ? 'bg-green-400' : 'bg-red-400'}`} />
+                    <span className={l.active ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>{l.active ? 'Aktif' : 'Padam'}</span>
+                    <span className="text-white/40">{l.label}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {/* Normal Reference Values */}
+          <div className="glass-card p-4 sm:p-6">
+            <h3 className="text-sm font-bold text-cyan-400 mb-3">Nilai Normal Referensi</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-5 gap-3 text-xs">
+              <div className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
+                <span className="text-white/50">V<sub>R</sub></span>
+                <span className="text-green-400 font-mono">{normalParameters.voltageR.toFixed(1)} kV</span>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
+                <span className="text-white/50">V<sub>S</sub></span>
+                <span className="text-green-400 font-mono">{normalParameters.voltageS.toFixed(1)} kV</span>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
+                <span className="text-white/50">V<sub>T</sub></span>
+                <span className="text-green-400 font-mono">{normalParameters.voltageT.toFixed(1)} kV</span>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
+                <span className="text-white/50">I</span>
+                <span className="text-green-400 font-mono">{normalParameters.current.toFixed(0)} A</span>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
+                <span className="text-white/50">f</span>
+                <span className="text-green-400 font-mono">{normalParameters.frequency.toFixed(1)} Hz</span>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
+                <span className="text-white/50">P</span>
+                <span className="text-green-400 font-mono">{normalParameters.activePower.toFixed(1)} MW</span>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
+                <span className="text-white/50">Q</span>
+                <span className="text-green-400 font-mono">{normalParameters.reactivePower.toFixed(1)} MVAr</span>
+              </div>
+              <div className="flex items-center justify-between p-2 bg-white/5 rounded-lg">
+                <span className="text-white/50">cos φ</span>
+                <span className="text-green-400 font-mono">{normalParameters.powerFactor.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* Export Buttons */}
+            <div className="mt-4 flex items-center gap-3">
+              <button
+                onClick={exportEventLog}
+                disabled={eventLog.length === 0}
+                className="glow-btn-yellow text-xs disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                Export CSV
+              </button>
+              <button
+                onClick={exportEventLogPDF}
+                disabled={eventLog.length === 0}
+                className="glow-btn text-xs disabled:opacity-30 disabled:cursor-not-allowed"
+              >
+                Export PDF
+              </button>
+              {eventLog.length === 0 && (
+                <span className="text-white/30 text-xs">Jalankan simulasi terlebih dahulu untuk mengaktifkan export</span>
+              )}
+            </div>
+          </div>
         </div>
       </section>
     </>

@@ -647,3 +647,97 @@ Stage Summary:
 - Enhanced Tooltips: parameter tables from enhancedComponentInfo data, normal vs fault status
 - All existing features preserved: 9-relay diagram, simulation, monitoring, audio, CSV export, etc.
 - Lint passed, no errors
+
+---
+Task ID: 1
+Agent: QuizEnhancer Agent
+Task: Enhance QuizAndRemaining.tsx with essay inputs, quiz persistence, and quiz history
+
+Work Log:
+- Read worklog.md to understand prior work (Tasks 1, 2, 3, 3-a, 3-b, 3-c, 3-d, 14, main, data-enhancer, db-setup, 4 completed)
+- Read current QuizAndRemaining.tsx (725 lines) to understand existing implementation
+- Reviewed API route /api/quiz-results (POST and GET already existed from db-setup task)
+- Reviewed protection-data.ts evaluationQuestions (10 string questions, indices 0-9)
+- Added useState, useEffect, useCallback imports
+- Added new state variables: essayAnswers, essayFeedback, saveNotification, quizHistory, historyLoaded
+- Added essayKeywords config object with keyword arrays and positive feedback for Q0-Q4 as specified:
+  - Q0: ["proteksi", "generator", "sinkron", "gangguan", "kerusakan"]
+  - Q1: ["diferensial", "87g", "arus", "masuk", "keluar"]
+  - Q2: ["ct", "pt", "arus", "tegangan", "menurunkan", "transformer"]
+  - Q3: ["trip", "coil", "sinyal", "relay", "cb", "circuit breaker"]
+  - Q4: ["overcurrent", "arus lebih", "50/51", "setting", "psm"]
+- Added handleCheckEssay function with keyword matching logic:
+  - Empty answer: "Silakan tulis jawaban terlebih dahulu."
+  - 2+ keywords match: positive feedback with match count
+  - 1 keyword match: partial feedback with suggestion
+  - 0 keywords match: default "Coba tambahkan istilah teknis..." feedback
+  - Q5-Q9: uses general technical terms for matching
+- Added fetchQuizHistory using useCallback with .then() chaining (to avoid lint error)
+- Added useEffect with empty dependency array to fetch quiz history on mount
+- Modified handleSubmitQuiz to async function:
+  - Still sets submitted=true immediately
+  - Computes score, percentage, category
+  - POSTs to /api/quiz-results with quiz result data
+  - Shows "Hasil kuis disimpan" notification that fades after 3 seconds
+  - Refreshes quiz history after successful save
+- Enhanced Evaluasi section (Section 17):
+  - Each question now has a textarea input (rows=3, resizable)
+  - Textarea styling matches calculator inputs (bg-white/5, border-white/15, rounded-lg, px-4, py-2.5)
+  - Focus state uses purple color scheme (focus:border-purple-400/50, focus:ring-purple-400/30)
+  - "Periksa Jawaban" button with purple gradient styling
+  - Character count display when answer is non-empty
+  - Color-coded feedback display: green (✅), yellow (⚠️), red (❌), default (white/70)
+  - Feedback clears when user edits their answer
+  - Updated info note text to explain the auto-feedback mechanism
+- Added "Riwayat Kuis" section within Kuis Interaktif (Section 16):
+  - Shows only when history is loaded and has entries
+  - Clock icon + "Riwayat Kuis" heading
+  - Compact table with #, Skor, Persentase, Kategori, Waktu columns
+  - Color-coded percentage and category badge (green/cyan/yellow/red)
+  - Shows max 10 entries with "Menampilkan 10 dari N hasil" overflow message
+  - Indonesian date formatting with day, month, year, hour, minute
+- Added save notification: inline message with green styling, check icon, animate-pulse, fades after 3s
+- Lint check passed with no errors
+- Dev server compiling successfully
+
+Stage Summary:
+- Essay evaluation enhanced with textarea inputs, keyword matching feedback, and "Periksa Jawaban" button
+- Quiz results now persisted to database via POST /api/quiz-results after submission
+- "Hasil kuis disimpan" notification shown for 3 seconds after saving
+- Quiz history section added with compact table showing last 10 results
+- All existing code preserved, only additions made
+- Lint passed, dev server running successfully
+
+---
+Task ID: 2
+Agent: enhancement-agent
+Task: Enhance DiagramAndSimulation.tsx with 3 specific changes (click pop-ups, replay button, DB persistence)
+
+Work Log:
+- Read worklog.md to understand prior work
+- Read existing DiagramAndSimulation.tsx (~1650 lines) to understand current implementation
+- Confirmed /api/simulation-logs API route exists (POST endpoint for saving simulation logs)
+- Confirmed enhancedComponentInfo and relayDetails data structures available for pop-up content
+- Applied Change 1: Click-to-Open Persistent Pop-ups
+  - Added clickedComponent and clickedRelay state variables (useState<string | null>)
+  - Added onClick handlers to all 7 SVG component groups: Generator, CT, PT, Trip Coil, CB, Busbar, and Relay boxes
+  - Added persistent pop-up modal for components after </svg> tag with glass card, parameter tables, normal/fault status
+  - Added persistent pop-up modal for relays after </svg> tag with ANSI badge, name, monitors, curve, normal/trip values
+  - Both pop-ups: fixed z-50 overlay, backdrop blur, close on backdrop click or X button
+- Applied Change 2: Replay Button
+  - Added "Replay Simulasi" button after "Reset Simulasi" button
+  - Only visible when selectedFault is not null AND simulationPhase >= 4
+  - Blue gradient styling, calls selectFault(selectedFault) to re-trigger simulation
+- Applied Change 3: Simulation Log DB Persistence
+  - Added useEffect that fires when simulationPhase === 4 and selectedFault is not null
+  - POSTs to /api/simulation-logs with faultType, relayActivated, cbStatus, eventLog, duration
+  - Silently fails on error, dependency array: [simulationPhase, selectedFault] only
+- All existing code preserved unchanged
+- Lint check passed with no errors
+
+Stage Summary:
+- 3 enhancements applied to DiagramAndSimulation.tsx
+- Click-to-open persistent pop-ups for all SVG components and relays with detailed parameter info
+- Replay button for re-triggering completed fault simulations
+- Auto-save simulation log to SQLite database via /api/simulation-logs when simulation completes
+- All existing features preserved, lint passed, no errors

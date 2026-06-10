@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { quizData, studyCases, glossaryData, commonMistakes, evaluationQuestions, references } from '@/data/protection-data';
 
 export default function QuizAndRemaining() {
@@ -23,6 +23,92 @@ export default function QuizAndRemaining() {
     statusMsg: string;
   } | null>(null);
   const [relayError, setRelayError] = useState('');
+
+  // ======== ESSAY EVALUATION STATE ========
+  const [essayAnswers, setEssayAnswers] = useState<Record<number, string>>({});
+  const [essayFeedback, setEssayFeedback] = useState<Record<number, string>>({});
+
+  // ======== QUIZ PERSISTENCE STATE ========
+  const [saveNotification, setSaveNotification] = useState<string | null>(null);
+  const [quizHistory, setQuizHistory] = useState<{
+    id: string;
+    score: number;
+    totalQuestions: number;
+    percentage: number;
+    category: string;
+    createdAt: string;
+  }[]>([]);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
+
+  // ======== ESSAY KEYWORD MATCHING ========
+  const essayKeywords: Record<number, { keywords: string[]; positive: string }> = {
+    0: {
+      keywords: ['proteksi', 'generator', 'sinkron', 'gangguan', 'kerusakan'],
+      positive: 'Jawaban Anda menyebutkan konsep proteksi generator dengan baik.',
+    },
+    1: {
+      keywords: ['diferensial', '87g', 'arus', 'masuk', 'keluar'],
+      positive: 'Anda memahami prinsip relay diferensial dengan baik.',
+    },
+    2: {
+      keywords: ['ct', 'pt', 'arus', 'tegangan', 'menurunkan', 'transformer'],
+      positive: 'Anda memahami fungsi CT/PT dalam sistem proteksi.',
+    },
+    3: {
+      keywords: ['trip', 'coil', 'sinyal', 'relay', 'cb', 'circuit breaker'],
+      positive: 'Anda memahami mekanisme trip coil dengan baik.',
+    },
+    4: {
+      keywords: ['overcurrent', 'arus lebih', '50/51', 'setting', 'psm'],
+      positive: 'Anda memahami relay arus lebih dengan baik.',
+    },
+  };
+
+  const handleCheckEssay = (idx: number) => {
+    const answer = (essayAnswers[idx] || '').toLowerCase().trim();
+    if (!answer) {
+      setEssayFeedback((prev) => ({ ...prev, [idx]: 'Silakan tulis jawaban terlebih dahulu.' }));
+      return;
+    }
+
+    const config = essayKeywords[idx];
+    if (config) {
+      const matchCount = config.keywords.filter((kw) => answer.includes(kw)).length;
+      if (matchCount >= 2) {
+        setEssayFeedback((prev) => ({ ...prev, [idx]: `✅ ${config.positive} (${matchCount}/${config.keywords.length} kata kunci cocok)` }));
+      } else if (matchCount === 1) {
+        setEssayFeedback((prev) => ({ ...prev, [idx]: `⚠️ Jawaban Anda menyebutkan salah satu konsep kunci. Coba perluas jawaban dengan istilah teknis yang lebih spesifik. (1/${config.keywords.length} kata kunci cocok)` }));
+      } else {
+        setEssayFeedback((prev) => ({ ...prev, [idx]: '❌ Coba tambahkan istilah teknis yang lebih spesifik untuk menjawab pertanyaan ini.' }));
+      }
+    } else {
+      // Questions 5-9: no specific keywords defined, check for general technical terms
+      const generalTerms = ['relay', 'proteksi', 'generator', 'arus', 'tegangan', 'gangguan', 'trip', 'cb', 'stator', 'rotor'];
+      const generalMatch = generalTerms.filter((t) => answer.includes(t)).length;
+      if (generalMatch >= 2) {
+        setEssayFeedback((prev) => ({ ...prev, [idx]: `✅ Jawaban Anda mengandung istilah teknis yang relevan. (${generalMatch} istilah terdeteksi)` }));
+      } else {
+        setEssayFeedback((prev) => ({ ...prev, [idx]: '❌ Coba tambahkan istilah teknis yang lebih spesifik untuk menjawab pertanyaan ini.' }));
+      }
+    }
+  };
+
+  // ======== QUIZ HISTORY FETCH ========
+  const fetchQuizHistory = useCallback(() => {
+    fetch('/api/quiz-results')
+      .then((res) => res.json())
+      .then((data) => {
+        setQuizHistory(data);
+        setHistoryLoaded(true);
+      })
+      .catch(() => {
+        // silently fail
+      });
+  }, []);
+
+  useEffect(() => {
+    fetchQuizHistory();
+  }, [fetchQuizHistory]);
 
   // ======== CALCULATOR: Kecepatan Sinkron ========
   const calculateSyncSpeed = () => {
@@ -99,8 +185,34 @@ export default function QuizAndRemaining() {
     setAnswers((prev) => ({ ...prev, [questionId]: optionIndex }));
   };
 
-  const handleSubmitQuiz = () => {
+  const handleSubmitQuiz = async () => {
     setSubmitted(true);
+
+    // Calculate results and persist to database
+    const computedScore = quizData.reduce((acc, q) => acc + (answers[q.id] === q.correctIndex ? 1 : 0), 0);
+    const computedPercentage = Math.round((computedScore / totalQuestions) * 100);
+    const category = getScoreCategory(computedPercentage).label;
+
+    try {
+      const res = await fetch('/api/quiz-results', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          score: computedScore,
+          totalQuestions,
+          percentage: computedPercentage,
+          category,
+          answers,
+        }),
+      });
+      if (res.ok) {
+        setSaveNotification('Hasil kuis disimpan');
+        setTimeout(() => setSaveNotification(null), 3000);
+        fetchQuizHistory();
+      }
+    } catch {
+      // silently fail - quiz still works without persistence
+    }
   };
 
   const handleResetQuiz = () => {
@@ -469,6 +581,16 @@ export default function QuizAndRemaining() {
             </div>
           </div>
 
+          {/* Save notification */}
+          {saveNotification && (
+            <div className="mb-6 flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg bg-green-400/15 border border-green-400/30 text-green-400 text-sm font-medium animate-pulse">
+              <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+              </svg>
+              {saveNotification}
+            </div>
+          )}
+
           {/* Score display after submission */}
           {submitted && (
             <div className="glass-card p-6 mb-8 text-center">
@@ -622,6 +744,73 @@ export default function QuizAndRemaining() {
               </button>
             </div>
           )}
+
+          {/* Quiz History Section */}
+          {historyLoaded && quizHistory.length > 0 && (
+            <div className="mt-10">
+              <div className="flex items-center gap-3 mb-4">
+                <svg className="w-5 h-5 text-cyan-400 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <h3 className="text-lg font-semibold text-white">Riwayat Kuis</h3>
+              </div>
+              <div className="glass-card p-4 overflow-x-auto">
+                <table className="table-glass">
+                  <thead>
+                    <tr>
+                      <th className="text-xs">#</th>
+                      <th className="text-xs">Skor</th>
+                      <th className="text-xs">Persentase</th>
+                      <th className="text-xs">Kategori</th>
+                      <th className="text-xs">Waktu</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {quizHistory.slice(0, 10).map((h, hIdx) => (
+                      <tr key={h.id}>
+                        <td className="text-xs text-white/50">{hIdx + 1}</td>
+                        <td className="text-xs font-semibold text-white/80">{h.score}/{h.totalQuestions}</td>
+                        <td className="text-xs">
+                          <span className={`font-semibold ${
+                            h.percentage >= 80 ? 'text-green-400' :
+                            h.percentage >= 60 ? 'text-cyan-400' :
+                            h.percentage >= 40 ? 'text-yellow-400' :
+                            'text-red-400'
+                          }`}>
+                            {h.percentage}%
+                          </span>
+                        </td>
+                        <td className="text-xs">
+                          <span className={`inline-block px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                            h.percentage >= 80 ? 'bg-green-400/15 text-green-400 border border-green-400/20' :
+                            h.percentage >= 60 ? 'bg-cyan-400/15 text-cyan-400 border border-cyan-400/20' :
+                            h.percentage >= 40 ? 'bg-yellow-400/15 text-yellow-400 border border-yellow-400/20' :
+                            'bg-red-400/15 text-red-400 border border-red-400/20'
+                          }`}>
+                            {h.category}
+                          </span>
+                        </td>
+                        <td className="text-xs text-white/40">
+                          {new Date(h.createdAt).toLocaleDateString('id-ID', {
+                            day: '2-digit',
+                            month: 'short',
+                            year: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                          })}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                {quizHistory.length > 10 && (
+                  <p className="text-white/30 text-xs mt-2 text-center">
+                    Menampilkan 10 dari {quizHistory.length} hasil
+                  </p>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       </section>
 
@@ -631,16 +820,73 @@ export default function QuizAndRemaining() {
           <h2 className="text-3xl md:text-4xl font-bold bg-gradient-to-r from-cyan-400 via-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
             Evaluasi
           </h2>
-          <p className="text-white/60 mb-8 text-lg">Pertanyaan essay untuk evaluasi mandiri</p>
+          <p className="text-white/60 mb-8 text-lg">Pertanyaan essay untuk evaluasi mandiri — tulis jawaban Anda dan periksa</p>
 
           <div className="glass-card p-6">
-            <div className="space-y-4">
+            <div className="space-y-6">
               {evaluationQuestions.map((question, idx) => (
-                <div key={idx} className="flex items-start gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors">
-                  <span className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30 text-purple-400 font-bold text-sm">
-                    {idx + 1}
-                  </span>
-                  <p className="text-white/85 leading-relaxed pt-1">{question}</p>
+                <div key={idx} className="p-4 rounded-lg bg-white/[0.02] border border-white/[0.06] hover:bg-white/[0.04] transition-colors">
+                  <div className="flex items-start gap-3 mb-3">
+                    <span className="shrink-0 flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-purple-500/20 to-pink-500/20 border border-purple-400/30 text-purple-400 font-bold text-sm">
+                      {idx + 1}
+                    </span>
+                    <p className="text-white/85 leading-relaxed pt-1">{question}</p>
+                  </div>
+
+                  {/* Essay textarea input */}
+                  <div className="ml-11">
+                    <textarea
+                      value={essayAnswers[idx] || ''}
+                      onChange={(e) => {
+                        setEssayAnswers((prev) => ({ ...prev, [idx]: e.target.value }));
+                        // Clear feedback when editing
+                        if (essayFeedback[idx]) {
+                          setEssayFeedback((prev) => {
+                            const next = { ...prev };
+                            delete next[idx];
+                            return next;
+                          });
+                        }
+                      }}
+                      placeholder="Tuliskan jawaban Anda di sini..."
+                      rows={3}
+                      className="w-full bg-white/5 border border-white/15 rounded-lg px-4 py-2.5 text-white placeholder-white/30 focus:outline-none focus:border-purple-400/50 focus:ring-1 focus:ring-purple-400/30 transition-all resize-y text-sm leading-relaxed"
+                    />
+
+                    <div className="flex items-center gap-3 mt-2">
+                      <button
+                        onClick={() => handleCheckEssay(idx)}
+                        className="text-xs px-4 py-1.5 rounded-lg bg-gradient-to-r from-purple-500/20 to-pink-500/20 border border-purple-400/30 text-purple-300 hover:from-purple-500/30 hover:to-pink-500/30 hover:text-purple-200 transition-all font-medium"
+                      >
+                        Periksa Jawaban
+                      </button>
+                      {(essayAnswers[idx] || '').trim().length > 0 && (
+                        <span className="text-white/30 text-xs">
+                          {(essayAnswers[idx] || '').trim().length} karakter
+                        </span>
+                      )}
+                    </div>
+
+                    {/* Feedback display */}
+                    {essayFeedback[idx] && (
+                      <div className={`mt-3 p-3 rounded-lg text-sm border ${
+                        essayFeedback[idx].startsWith('✅')
+                          ? 'bg-green-400/10 border-green-400/20 text-green-300/90'
+                          : essayFeedback[idx].startsWith('⚠️')
+                          ? 'bg-yellow-400/10 border-yellow-400/20 text-yellow-300/90'
+                          : essayFeedback[idx].startsWith('❌')
+                          ? 'bg-red-400/10 border-red-400/20 text-red-300/90'
+                          : 'bg-white/5 border-white/10 text-white/70'
+                      }`}>
+                        <div className="flex items-start gap-2">
+                          <svg className="w-4 h-4 shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          <span>{essayFeedback[idx]}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -651,7 +897,7 @@ export default function QuizAndRemaining() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <p className="text-amber-300/80 text-sm">
-                  Pertanyaan di atas ditujukan untuk evaluasi mandiri. Jawablah secara tertulis untuk mengukur pemahaman Anda tentang materi sistem proteksi generator sinkron.
+                  Tuliskan jawaban pada kolom di atas, lalu klik &quot;Periksa Jawaban&quot; untuk mendapatkan umpan balik otomatis berdasarkan kata kunci teknis. Umpan balik ini bersifat indikatif — evaluasi mendapatkan masih diperlukan untuk penilaian yang lebih komprehensif.
                 </p>
               </div>
             </div>
