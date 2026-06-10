@@ -402,3 +402,248 @@ Stage Summary:
 - Audio effects via Web Audio API (relay click, trip sound, notification) with mute toggle
 - Expanded Logika Trip section with 9 relay logic cards
 - All responsive, dark/neon theme consistent
+
+---
+Task ID: 2
+Agent: data-enhancer
+Task: Enhance protection-data.ts with tutorial steps and enhanced component info
+
+Work Log:
+- Read worklog.md to understand prior work (Tasks 1, 2, 3, 3-a, 3-b, 3-c, 3-d, 14, main completed)
+- Read current protection-data.ts (887 lines) to understand existing exports and data structures
+- Confirmed all existing exports: FaultData, faultsData, ANSICode, ansiCodes, ComponentData, protectionComponents, QuizQuestion, quizData, studyCases, glossaryData, commonMistakes, evaluationQuestions, RelayDetail, relayDetails, FaultSimulation, faultSimulations, EventLogEntry, normalParameters, generatorComponents, references
+- Added TutorialStep interface with fields: phase, title, description, highlightComponent (union type), duration
+- Added tutorialStepsData export: Record<string, TutorialStep[]> with 5 fault type entries:
+  - overcurrent: 5 phases (Gangguan Arus Lebih → Relay 50/51 → Trip Coil → CB Terbuka → Sistem Aman)
+  - loss-of-excitation: 5 phases (Kehilangan Eksitasi → Relay 40 → Trip Coil → CB Terbuka → Sistem Aman)
+  - reverse-power: 5 phases (Daya Balik Terdeteksi → Relay 32 → Trip Coil → CB Terbuka → Sistem Aman)
+  - negative-sequence: 5 phases (Beban Tidak Seimbang → Relay 46 → Trip Coil → CB Terbuka → Sistem Aman)
+  - short-circuit: 5 phases (Hubung Singkat Internal → Relay 87G+50/51 → Trip Coil → CB Terbuka → Sistem Aman)
+- Added EnhancedComponentInfo interface with fields: key, name, description, parameters (array), normalStatus, faultStatus
+- Added enhancedComponentInfo export: 7 component entries:
+  - generator (5 parameters), ct (4 parameters), pt (3 parameters), relay (3 parameters), tripcoil (3 parameters), cb (4 parameters), busbar (2 parameters)
+- All existing exports kept intact
+- Lint check passed with no errors
+
+Stage Summary:
+- Added tutorialStepsData (5 fault types × 5 phases each) and enhancedComponentInfo (7 components with parameter details)
+- All existing data exports preserved unchanged
+- File now exports: faultsData, ansiCodes, protectionComponents, quizData, studyCases, glossaryData, commonMistakes, evaluationQuestions, relayDetails, faultSimulations, EventLogEntry, normalParameters, generatorComponents, references, TutorialStep, tutorialStepsData, EnhancedComponentInfo, enhancedComponentInfo
+- Lint passed, no errors
+
+---
+Task ID: db-setup
+Agent: full-stack-developer
+Task: Set up Prisma + SQLite database for the Sistem Proteksi Generator Sinkron project
+
+Work Log:
+- Read worklog.md to understand prior work (Tasks 1, 2, 3, 3-a, 3-b, 3-c, 3-d, 14, main, data-enhancer completed)
+- Replaced existing Prisma schema (User/Post models) with project-specific models:
+  - QuizResult: id, score, totalQuestions, percentage, category, answers (JSON), createdAt
+  - SimulationLog: id, faultType, relayActivated, cbStatus, eventLog (JSON), duration, createdAt
+- Updated .env DATABASE_URL from absolute path (file:/home/z/my-project/db/custom.db) to relative path (file:./dev.db)
+- Ran db:push successfully, created prisma/dev.db with new schema tables
+- Updated lib/db.ts to use simpler PrismaClient instantiation (removed log: ['query'] option)
+- Created API route /api/quiz-results:
+  - POST: saves quiz result with score, totalQuestions, percentage, category, answers
+  - GET: fetches last 50 quiz results ordered by createdAt desc
+- Created API route /api/simulation-logs:
+  - POST: saves simulation log with faultType, relayActivated, cbStatus, eventLog, duration
+  - GET: fetches last 50 simulation logs ordered by createdAt desc
+- Lint check passed with no errors
+
+Stage Summary:
+- Prisma schema configured with QuizResult and SimulationLog models
+- SQLite database (prisma/dev.db) created and synced
+- DATABASE_URL set to file:./dev.db
+- lib/db.ts exports singleton PrismaClient instance
+- Two API routes created: /api/quiz-results and /api/simulation-logs (POST + GET each)
+- All lint checks pass
+
+---
+Task ID: 4
+Agent: enhancement-agent
+Task: Enhance Pengertian Generator Sinkron section in HeroAndEarlySections.tsx
+
+Work Log:
+- Read worklog.md to understand prior work (Tasks 1, 2, 3, 3-a, 3-b, 3-c, 3-d, 14, main, data-enhancer, db-setup completed)
+- Reviewed HeroAndEarlySections.tsx current Pengertian section (lines 409-523)
+- Reviewed protection-data.ts generatorComponents data structure (6 components: Rotor, Stator, Slip Rings, Housing, Cooling, Bearing)
+- Reviewed globals.css for existing CSS classes and animations
+- Enhanced Pengertian Generator Sinkron section with:
+
+  1. Definisi Card Enhancement:
+     - Added `border-glow-cyan` CSS class with animated border glow
+     - Added `border-glow-anim` overlay div for pulsing border effect
+     - Added new CSS keyframes `borderGlowCyan` to globals.css (3s ease-in-out infinite cycle)
+     - Card now has subtle animated cyan glow border around the definition text
+
+  2. Interactive Generator Cross-Section Diagram (NEW):
+     - Added full SVG diagram (viewBox 500x320) showing generator cross-section
+     - Housing/Frame: outermost dashed circle (green #00ff88) with label
+     - Stator: solid circle (purple #a855f7) with 12 winding slot lines at 30° intervals
+     - Rotor: inner circle (cyan #00d4ff) with rotor-spin CSS animation class
+       - N/S pole rectangles rotating with rotor
+       - Center shaft with "G" label
+       - Electricity-flow arc path for rotation indicator
+     - Slip Rings: dashed circle (orange #f97316) between rotor and stator
+     - Bearing: small circles at top/bottom (yellow #eab308)
+     - Cooling System: curved dashed path at top (blue #3b82f6)
+     - Air Gap: vertical indicator line between stator and rotor
+     - All components have leader lines with dot connectors pointing to labels
+     - Legend box (bottom-right) with 6 color-coded component entries
+     - SVG filters: glowCyanP, glowPurpleP for glow effects
+     - Background grid pattern for professional look
+
+  3. Prinsip Kerja Enhancement:
+     - Added technical terms to each step: "Mechanical Input", "Rotating Magnetic Field", "Electromagnetic Induction", "Synchronous Speed"
+     - Added `group/step` hover state on step cards with `hover:scale-105` transform
+     - Added hover tooltip showing technical term in badge-ansi style
+     - Tooltip uses `opacity-0 group-hover/step:opacity-100` with `translate-y` transition animation
+     - Enlarged connecting arrows from 28x14 to 36x18 for better visibility
+     - Vertical arrows (mobile) enlarged from 14x28 to 18x36
+
+  4. Komponen Utama Enhancement:
+     - Added colored left border per component type using inline style:
+       - Rotor → cyan (#00d4ff)
+       - Stator → purple (#a855f7)
+       - Slip Rings → orange (#f97316)
+       - Housing → green (#22c55e)
+       - Cooling → blue (#3b82f6)
+       - Bearing → yellow (#eab308)
+     - Added component-specific emoji icons: ⚙️, 🔌, 🔗, 🏗️, ❄️, 🔩
+     - Numbered badge color now matches component border color
+     - Added hover glow background (semi-transparent component color)
+     - Enhanced hover tooltip with transition animation (opacity + translateY)
+     - Technical term badge uses component border color for background, border, and text
+     - Added overflow-hidden to card for clean hover glow effect
+
+  5. Enhanced Link to Diagram CTA:
+     - Changed from simple button to glass-card container
+     - Added diagram icon SVG with glow-pulse animation
+     - Added "Diagram Proteksi Interaktif" title text
+     - Added subtitle: "Lihat bagaimana semua komponen bekerja bersama dalam sistem proteksi"
+     - Button now has glow-pulse CSS animation, larger padding (px-8 py-3), minimum width 240px
+     - Larger font size (text-base sm:text-lg), font-semibold
+     - Rounded 14px border radius
+
+- Added to globals.css:
+  - `@keyframes borderGlowCyan` animation (0%/100%: subtle glow, 50%: brighter glow)
+  - `.border-glow-cyan` class applying the animation
+  - `.border-glow-anim` class with transparent border and same animation
+- All other sections unchanged (Beranda, Latar Belakang, Capaian, Dasar Generator, Sistem Proteksi, Komponen Proteksi)
+- No new external imports added
+- Component remains 'use client' and export default function HeroAndEarlySections()
+- Lint check passed with no errors
+- Dev server compiling successfully
+
+Stage Summary:
+- Pengertian Generator Sinkron section significantly enhanced
+- New SVG cross-section diagram with rotating rotor animation, labeled components, and legend
+- Definisi card with animated border glow
+- Prinsip Kerja with hover technical term tooltips and larger animated arrows
+- Komponen Utama with colored borders, emoji icons, and enhanced hover tooltips with transitions
+- CTA button upgraded to prominent glow-pulse card with subtitle
+- Added CSS animations for border glow effect
+- All existing sections unchanged, no new imports
+
+---
+Task ID: 3
+Agent: DiagramAndSimulation-Enhance Agent
+Task: Rebuild DiagramAndSimulation.tsx with 6 major enhancements
+
+Work Log:
+- Read worklog.md to understand prior work (Tasks 1, 2, 3, 3-a, 3-b, 3-c, 3-d, 14, main, data-enhancer, db-setup, 4 completed)
+- Read existing DiagramAndSimulation.tsx (1370 lines) to understand current implementation
+- Read protection-data.ts for all data structures: relayDetails (9 relays), faultSimulations (5 sims), normalParameters, EventLogEntry, tutorialStepsData (5 fault types × 5 steps), enhancedComponentInfo (7 components with parameters)
+- Complete rewrite of DiagramAndSimulation.tsx with 6 major enhancements:
+
+  1. R/S/T Phase Flow Arrows (NEW):
+     - Added 3 colored phase flow arrows in SVG between Generator→CT/PT
+     - Phase R: Red (#ff4444) at y=290 with label "R"
+     - Phase S: Yellow (#ffaa00) at y=300 with label "S"
+     - Phase T: Blue (#4488ff) at y=310 with label "T"
+     - Each arrow uses electricity-flow CSS animation when system is normal
+     - Arrows become dim (opacity 0.2) when flow is stopped
+     - Small directional triangles at the end of each phase line
+
+  2. Volume Control (ENHANCED from mute/unmute toggle):
+     - Replaced simple mute/unmute button with volume slider (range input, 0-100, default 70)
+     - Added mute button icon (speaker with X for muted, speaker with waves for unmuted)
+     - Audio helpers now use audioVolume variable (0-1 scale) multiplied by gain
+     - Volume syncs to audio helpers via useEffect on [volume, audioMuted]
+     - Slider styled with Tailwind: gradient background (cyan to gray), custom width
+     - Volume percentage display next to slider (e.g. "70%")
+     - Clicking slider when muted auto-unmutes
+
+  3. Step-by-Step Tutorial Overlay (NEW):
+     - When simulation runs, a tutorial panel appears below the phase indicator
+     - Displays current step number (1-5), title, and description
+     - Shows which SVG component is highlighted (e.g. "Highlight: GENERATOR")
+     - Tutorial steps come from tutorialStepsData[faultId] data
+     - Progress dots at bottom (5 dots, active one scaled up with amber color)
+     - Auto-advances through steps in sync with simulation phases:
+       - Step 0: Fault detected (phase 1)
+       - Step 1: Relay activates (phase 2)
+       - Step 2: Trip coil works (phase 3)
+       - Step 3: CB opens (phase 4)
+       - Step 4: System safe (1.2s after phase 4)
+     - SVG components highlighted with amber tutorialHighlight filter
+     - SVG group IDs added for tutorial targeting: svg-generator, svg-ctpt, svg-relay-group, svg-tripcoil, svg-cb, svg-busbar
+
+  4. PDF Export for Event Log (NEW):
+     - Added "Export PDF" button next to existing "Export CSV" button
+     - Uses browser print/window approach with styled HTML
+     - PDF includes: title, fault name, active relays, and event log table
+     - Color-coded event types in the PDF (fault=red, warning=orange, trip=#ff6600, safe=green, info=cyan)
+     - Dark theme styling (background #1a1a2e, monospace font)
+     - Opens in new window/tab and triggers browser print dialog
+
+  5. Enhanced Tooltips with Parameter Info (ENHANCED):
+     - Component hover tooltips now show data from enhancedComponentInfo
+     - Includes parameter table with label, normalValue, and unit columns
+     - Shows normal vs fault status comparison at bottom
+     - Parameters displayed for each component:
+       - Generator: 5 params (Tegangan Terminal, Arus Nominal, Frekuensi, Daya Aktif, Faktor Daya)
+       - CT: 4 params (Arus Primer, Arus Sekunder, Rasio CT, Akurasi)
+       - PT: 3 params (Tegangan Primer, Tegangan Sekunder, Rasio PT)
+       - Relay: 3 params (Jumlah Relay, Tegangan Supply, Waktu Respons)
+       - Trip Coil: 3 params (Tegangan Operasi, Arus Trip, Waktu Respons)
+       - CB: 4 params (Rating Tegangan, Rating Arus, Kemampuan Putus, Waktu Buka)
+       - Busbar: 2 params (Jumlah Beban, Tegangan Busbar)
+     - Tooltip width expanded to 320px for parameter table
+
+  6. All Existing Features Preserved:
+     - SVG single-line diagram with Generator, CT, PT, 9 relays (87G, 50/51, 46, 32, 40, 59, 27, 81U/O, 78), Trip Coil, CB, Busbar, Loads
+     - Color-coded lines (green=normal, orange=protection/signal, blue=trip, red=fault)
+     - Relay hover tooltips with ANSI code, name, monitors, curve, normal/trip values
+     - Simulation with 5 fault types (overcurrent, loss-of-excitation, reverse-power, negative-sequence, short-circuit)
+     - Event log with auto-scroll and color-coded entries
+     - Monitoring panel (Voltage R/S/T, current, frequency, active/reactive power, power factor, load status)
+     - Audio effects (relay click, trip sound, notification) via Web Audio API
+     - CSV export
+     - Reset simulation button
+     - Rotor animation
+     - Alarm indicator with alarm-blink
+     - Dashboard status grid (6 items)
+     - Logika Trip section (9 terminal-style cards)
+     - Trip sequence detail and conclusion after simulation
+     - Quick reference faultsData table when no fault selected
+
+- New imports added: tutorialStepsData, enhancedComponentInfo from @/data/protection-data
+- New state: tutorialStep (number), volume (number, default 70)
+- New SVG filter: tutorialHighlight (amber glow for highlighted components)
+- New SVG group IDs for tutorial targeting
+- All existing CSS classes used: glass-card, glow-btn variants, section-title, section-subtitle, badge-ansi, status-* classes, alarm-blink, electricity-flow, svg-tooltip, table-glass, terminal-card, keyword/string/comment
+- Lint check passed with no errors
+- TypeScript errors are only in unrelated example files (socket.io-client, skills)
+
+Stage Summary:
+- Complete rebuild of DiagramAndSimulation.tsx with 6 major enhancements
+- R/S/T Phase Flow Arrows: 3 colored animated arrows between Generator→CT/PT
+- Volume Control: slider (0-100) + mute button replacing simple toggle
+- Step-by-Step Tutorial: auto-advancing panel with progress dots and SVG highlighting
+- PDF Export: browser print approach for event log with styled dark theme
+- Enhanced Tooltips: parameter tables from enhancedComponentInfo data, normal vs fault status
+- All existing features preserved: 9-relay diagram, simulation, monitoring, audio, CSV export, etc.
+- Lint passed, no errors

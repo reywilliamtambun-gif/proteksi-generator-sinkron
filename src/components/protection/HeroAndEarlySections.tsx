@@ -414,8 +414,10 @@ export default function HeroAndEarlySections() {
             Memahami definisi, prinsip kerja, dan komponen utama generator sinkron
           </p>
 
-          {/* Definisi */}
-          <div className="glass-card p-6 mb-8">
+          {/* ──── Definisi with animated border glow ──── */}
+          <div className="glass-card p-6 mb-8 border-glow-cyan relative overflow-hidden">
+            {/* animated border glow overlay */}
+            <div className="absolute inset-0 rounded-[20px] pointer-events-none border-glow-anim" />
             <div className="flex items-center gap-2 mb-3">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2">
                 <circle cx="12" cy="12" r="10" />
@@ -433,7 +435,128 @@ export default function HeroAndEarlySections() {
             </p>
           </div>
 
-          {/* Prinsip Kerja */}
+          {/* ──── Interactive Generator Cross-Section Diagram ──── */}
+          <div className="glass-card p-6 mb-8">
+            <div className="flex items-center gap-2 mb-4">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00d4ff" strokeWidth="2">
+                <circle cx="12" cy="12" r="3" />
+                <circle cx="12" cy="12" r="8" strokeDasharray="2 2" />
+                <circle cx="12" cy="12" r="11" />
+              </svg>
+              <h3 className="text-cyan-300 font-semibold text-base">Diagram Penampang Generator</h3>
+            </div>
+            <div className="flex justify-center">
+              <svg viewBox="0 0 500 320" className="w-full max-w-[500px]" xmlns="http://www.w3.org/2000/svg">
+                {/* Background grid */}
+                <defs>
+                  <pattern id="grid-pengertian" width="20" height="20" patternUnits="userSpaceOnUse">
+                    <path d="M 20 0 L 0 0 0 20" fill="none" stroke="rgba(255,255,255,0.03)" strokeWidth="0.5" />
+                  </pattern>
+                  <filter id="glowCyanP" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="4" result="blur" />
+                    <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                  </filter>
+                  <filter id="glowPurpleP" x="-50%" y="-50%" width="200%" height="200%">
+                    <feGaussianBlur stdDeviation="3" result="blur" />
+                    <feMerge><feMergeNode in="blur" /><feMergeNode in="SourceGraphic" /></feMerge>
+                  </filter>
+                </defs>
+                <rect width="500" height="320" fill="url(#grid-pengertian)" />
+
+                {/* Housing / Frame (outermost) */}
+                <circle cx="160" cy="160" r="140" fill="rgba(0,255,136,0.04)" stroke="#00ff88" strokeWidth="2" strokeDasharray="6 3" />
+                <text x="160" y="310" textAnchor="middle" fill="#00ff88" fontSize="11" fontWeight="600" fontFamily="monospace">Housing / Frame</text>
+
+                {/* Stator (outer ring with winding slots) */}
+                <circle cx="160" cy="160" r="120" fill="rgba(168,85,247,0.08)" stroke="#a855f7" strokeWidth="2.5" />
+                {/* Stator winding slots */}
+                {[0, 30, 60, 90, 120, 150, 180, 210, 240, 270, 300, 330].map((angle) => (
+                  <line
+                    key={`slot-${angle}`}
+                    x1={160 + 95 * Math.cos((angle * Math.PI) / 180)}
+                    y1={160 + 95 * Math.sin((angle * Math.PI) / 180)}
+                    x2={160 + 118 * Math.cos((angle * Math.PI) / 180)}
+                    y2={160 + 118 * Math.sin((angle * Math.PI) / 180)}
+                    stroke="#a855f7"
+                    strokeWidth="3"
+                    strokeLinecap="round"
+                    opacity="0.7"
+                  />
+                ))}
+                {/* Stator label with leader line */}
+                <line x1="282" y1="80" x2="240" y2="100" stroke="#a855f7" strokeWidth="1.5" strokeDasharray="4 2" />
+                <circle cx="240" cy="100" r="2.5" fill="#a855f7" />
+                <text x="286" y="78" fill="#a855f7" fontSize="12" fontWeight="600" fontFamily="monospace">Stator</text>
+                <text x="286" y="93" fill="rgba(168,85,247,0.6)" fontSize="9" fontFamily="monospace">(Armature)</text>
+
+                {/* Cooling System indicator arrows */}
+                <path d="M 100 40 Q 130 30 160 35 Q 190 30 220 40" fill="none" stroke="#3b82f6" strokeWidth="1.5" strokeDasharray="3 2" opacity="0.6" />
+                <text x="160" y="30" textAnchor="middle" fill="#3b82f6" fontSize="9" fontFamily="monospace" opacity="0.7">Cooling H₂/Air</text>
+
+                {/* Rotor (inner circle with rotation animation) */}
+                <g className="rotor-spin" style={{ transformOrigin: '160px 160px' }}>
+                  {/* Rotor body */}
+                  <circle cx="160" cy="160" r="65" fill="rgba(0,212,255,0.08)" stroke="#00d4ff" strokeWidth="2" />
+                  {/* Rotor poles (N-S) */}
+                  <rect x="150" y="100" width="20" height="25" rx="4" fill="rgba(0,212,255,0.2)" stroke="#00d4ff" strokeWidth="1" />
+                  <text x="160" y="117" textAnchor="middle" fill="#00d4ff" fontSize="10" fontWeight="700" fontFamily="monospace">N</text>
+                  <rect x="150" y="195" width="20" height="25" rx="4" fill="rgba(0,212,255,0.2)" stroke="#00d4ff" strokeWidth="1" />
+                  <text x="160" y="212" textAnchor="middle" fill="#00d4ff" fontSize="10" fontWeight="700" fontFamily="monospace">S</text>
+                  {/* Rotor shaft center */}
+                  <circle cx="160" cy="160" r="12" fill="rgba(0,212,255,0.15)" stroke="#00d4ff" strokeWidth="1.5" />
+                  <text x="160" y="164" textAnchor="middle" fill="#00d4ff" fontSize="8" fontWeight="700" fontFamily="monospace">G</text>
+                  {/* Rotor rotation indicator */}
+                  <path d="M 125 160 A 35 35 0 0 1 160 125" fill="none" stroke="#00d4ff" strokeWidth="1.5" className="electricity-flow" />
+                </g>
+                {/* Rotor label */}
+                <line x1="282" y1="195" x2="225" y2="175" stroke="#00d4ff" strokeWidth="1.5" strokeDasharray="4 2" />
+                <circle cx="225" cy="175" r="2.5" fill="#00d4ff" />
+                <text x="286" y="193" fill="#00d4ff" fontSize="12" fontWeight="600" fontFamily="monospace">Rotor</text>
+                <text x="286" y="208" fill="rgba(0,212,255,0.6)" fontSize="9" fontFamily="monospace">(Field Winding)</text>
+
+                {/* Slip Rings / Brush label */}
+                <line x1="282" y1="250" x2="200" y2="230" stroke="#f97316" strokeWidth="1.5" strokeDasharray="4 2" />
+                <circle cx="200" cy="230" r="2.5" fill="#f97316" />
+                <text x="286" y="248" fill="#f97316" fontSize="11" fontWeight="600" fontFamily="monospace">Slip Rings</text>
+                <text x="286" y="263" fill="rgba(249,115,22,0.6)" fontSize="9" fontFamily="monospace">(Collector Rings)</text>
+                {/* Slip ring graphic */}
+                <circle cx="160" cy="160" r="72" fill="none" stroke="#f97316" strokeWidth="1" strokeDasharray="2 4" opacity="0.5" />
+
+                {/* Bearing label */}
+                <line x1="70" y1="250" x2="120" y2="230" stroke="#eab308" strokeWidth="1.5" strokeDasharray="4 2" />
+                <circle cx="120" cy="230" r="2.5" fill="#eab308" />
+                <text x="10" y="258" fill="#eab308" fontSize="11" fontWeight="600" fontFamily="monospace">Bearing</text>
+                <text x="10" y="273" fill="rgba(234,179,8,0.6)" fontSize="9" fontFamily="monospace">(Journal)</text>
+                {/* Bearing graphic - small circles at top/bottom */}
+                <circle cx="160" cy="25" r="5" fill="none" stroke="#eab308" strokeWidth="1.5" opacity="0.6" />
+                <circle cx="160" cy="295" r="5" fill="none" stroke="#eab308" strokeWidth="1.5" opacity="0.6" />
+
+                {/* Air gap indicator */}
+                <line x1="80" y1="160" x2="80" y2="140" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+                <line x1="80" y1="160" x2="80" y2="180" stroke="rgba(255,255,255,0.3)" strokeWidth="1" />
+                <text x="60" y="164" textAnchor="middle" fill="rgba(255,255,255,0.4)" fontSize="8" fontFamily="monospace">Air Gap</text>
+
+                {/* Legend */}
+                <rect x="330" y="60" width="160" height="130" rx="8" fill="rgba(0,0,0,0.3)" stroke="rgba(255,255,255,0.1)" strokeWidth="1" />
+                <text x="410" y="80" textAnchor="middle" fill="rgba(255,255,255,0.6)" fontSize="9" fontWeight="600" fontFamily="monospace">KOMPONEN</text>
+                {[
+                  { color: '#00d4ff', label: 'Rotor' },
+                  { color: '#a855f7', label: 'Stator' },
+                  { color: '#f97316', label: 'Slip Rings' },
+                  { color: '#00ff88', label: 'Housing' },
+                  { color: '#3b82f6', label: 'Cooling' },
+                  { color: '#eab308', label: 'Bearing' },
+                ].map((item, i) => (
+                  <g key={item.label}>
+                    <rect x="345" y={92 + i * 18} width="12" height="8" rx="2" fill={item.color} opacity="0.7" />
+                    <text x="364" y={100 + i * 18} fill="rgba(255,255,255,0.7)" fontSize="9" fontFamily="monospace">{item.label}</text>
+                  </g>
+                ))}
+              </svg>
+            </div>
+          </div>
+
+          {/* ──── Prinsip Kerja with animated arrows & hover technical terms ──── */}
           <div className="glass-card p-6 mb-8">
             <div className="flex items-center gap-2 mb-4">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffaa00" strokeWidth="2">
@@ -443,14 +566,14 @@ export default function HeroAndEarlySections() {
             </div>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-0">
               {[
-                { step: 1, label: 'Rotor Diputar', color: '#00d4ff', icon: '⚙️' },
-                { step: 2, label: 'Medan Magnet Berputar', color: '#8844ff', icon: '🧲' },
-                { step: 3, label: 'Arus Induksi di Stator', color: '#ffaa00', icon: '⚡' },
-                { step: 4, label: 'Frekuensi ditentukan oleh kecepatan rotor & jumlah kutub', color: '#00ff88', icon: '📐' },
+                { step: 1, label: 'Rotor Diputar', term: 'Mechanical Input', color: '#00d4ff', icon: '⚙️' },
+                { step: 2, label: 'Medan Magnet Berputar', term: 'Rotating Magnetic Field', color: '#8844ff', icon: '🧲' },
+                { step: 3, label: 'Arus Induksi di Stator', term: 'Electromagnetic Induction', color: '#ffaa00', icon: '⚡' },
+                { step: 4, label: 'Frekuensi ditentukan oleh kecepatan rotor & jumlah kutub', term: 'Synchronous Speed', color: '#00ff88', icon: '📐' },
               ].map((item, idx, arr) => (
                 <div key={item.step} className="flex items-center gap-2 sm:gap-0">
                   <div
-                    className="flex flex-col items-center gap-1 px-4 sm:px-5 py-3 rounded-xl border min-w-[140px] sm:min-w-[160px]"
+                    className="group/step relative flex flex-col items-center gap-1 px-4 sm:px-5 py-3 rounded-xl border min-w-[140px] sm:min-w-[160px] transition-all duration-300 hover:scale-105"
                     style={{
                       borderColor: item.color + '44',
                       background: item.color + '11',
@@ -459,17 +582,21 @@ export default function HeroAndEarlySections() {
                     <span className="text-xl sm:text-2xl">{item.icon}</span>
                     <span className="text-xs font-bold text-white/90 mb-0.5">Langkah {item.step}</span>
                     <span className="text-[10px] sm:text-xs text-white/70 text-center leading-tight">{item.label}</span>
+                    {/* Hover technical term tooltip */}
+                    <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover/step:opacity-100 transition-all duration-300 translate-y-2 group-hover/step:translate-y-0 pointer-events-none z-10 whitespace-nowrap">
+                      <span className="badge-ansi text-[10px]">{item.term}</span>
+                    </div>
                   </div>
                   {idx < arr.length - 1 && (
-                    <svg width="28" height="14" viewBox="0 0 28 14" className="shrink-0 hidden sm:block mx-1">
-                      <line x1="0" y1="7" x2="22" y2="7" stroke={item.color} strokeWidth="2" className="electricity-flow" />
-                      <polygon points="22,3 28,7 22,11" fill={item.color} />
+                    <svg width="36" height="18" viewBox="0 0 36 18" className="shrink-0 hidden sm:block mx-1">
+                      <line x1="0" y1="9" x2="28" y2="9" stroke={item.color} strokeWidth="2" className="electricity-flow" />
+                      <polygon points="28,4 36,9 28,14" fill={item.color} />
                     </svg>
                   )}
                   {idx < arr.length - 1 && (
-                    <svg width="14" height="28" viewBox="0 0 14 28" className="shrink-0 sm:hidden my-1">
-                      <line x1="7" y1="0" x2="7" y2="22" stroke={item.color} strokeWidth="2" className="electricity-flow" />
-                      <polygon points="3,22 7,28 11,22" fill={item.color} />
+                    <svg width="18" height="36" viewBox="0 0 18 36" className="shrink-0 sm:hidden my-1">
+                      <line x1="9" y1="0" x2="9" y2="28" stroke={item.color} strokeWidth="2" className="electricity-flow" />
+                      <polygon points="4,28 9,36 14,28" fill={item.color} />
                     </svg>
                   )}
                 </div>
@@ -477,7 +604,7 @@ export default function HeroAndEarlySections() {
             </div>
           </div>
 
-          {/* Komponen Utama */}
+          {/* ──── Komponen Utama with colored borders, icons & enhanced tooltips ──── */}
           <div className="glass-card p-6 mb-8">
             <div className="flex items-center gap-2 mb-4">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#00ff88" strokeWidth="2">
@@ -489,35 +616,94 @@ export default function HeroAndEarlySections() {
               <h3 className="text-cyan-300 font-semibold text-base">Komponen Utama</h3>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {generatorComponents.map((comp, idx) => (
-                <div
-                  key={comp.name}
-                  title={`Istilah Teknis: ${comp.term}`}
-                  className="group bg-white/5 border border-white/10 rounded-xl px-4 py-4 hover:bg-white/10 hover:border-cyan-400/30 transition-all duration-200 cursor-default"
-                >
-                  <div className="flex items-center gap-2 mb-2">
-                    <span className="flex-shrink-0 w-7 h-7 rounded-lg bg-cyan-400/15 text-cyan-300 text-xs font-bold flex items-center justify-center">
-                      {idx + 1}
-                    </span>
-                    <h4 className="text-white font-semibold text-sm">{comp.name}</h4>
+              {generatorComponents.map((comp, idx) => {
+                const compMeta: Record<string, { borderColor: string; icon: string; bgColor: string }> = {
+                  'Rotor': { borderColor: '#00d4ff', icon: '⚙️', bgColor: 'rgba(0,212,255,0.06)' },
+                  'Stator': { borderColor: '#a855f7', icon: '🔌', bgColor: 'rgba(168,85,247,0.06)' },
+                  'Slip Rings / Brush': { borderColor: '#f97316', icon: '🔗', bgColor: 'rgba(249,115,22,0.06)' },
+                  'Housing / Frame': { borderColor: '#22c55e', icon: '🏗️', bgColor: 'rgba(34,197,94,0.06)' },
+                  'Cooling System': { borderColor: '#3b82f6', icon: '❄️', bgColor: 'rgba(59,130,246,0.06)' },
+                  'Bearing': { borderColor: '#eab308', icon: '🔩', bgColor: 'rgba(234,179,8,0.06)' },
+                };
+                const meta = compMeta[comp.name] || { borderColor: '#00d4ff', icon: '📦', bgColor: 'rgba(0,212,255,0.06)' };
+
+                return (
+                  <div
+                    key={comp.name}
+                    title={`Istilah Teknis: ${comp.term}`}
+                    className="group relative bg-white/5 rounded-xl px-4 py-4 hover:bg-white/10 transition-all duration-300 cursor-default overflow-hidden"
+                    style={{
+                      borderLeft: `4px solid ${meta.borderColor}`,
+                      borderRight: '1px solid rgba(255,255,255,0.1)',
+                      borderTop: '1px solid rgba(255,255,255,0.1)',
+                      borderBottom: '1px solid rgba(255,255,255,0.1)',
+                    }}
+                  >
+                    {/* Hover glow background */}
+                    <div
+                      className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none"
+                      style={{ background: meta.bgColor }}
+                    />
+
+                    <div className="relative z-10">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="text-base sm:text-lg">{meta.icon}</span>
+                        <span
+                          className="flex-shrink-0 w-7 h-7 rounded-lg text-xs font-bold flex items-center justify-center"
+                          style={{
+                            background: meta.borderColor + '22',
+                            color: meta.borderColor,
+                          }}
+                        >
+                          {idx + 1}
+                        </span>
+                        <h4 className="text-white font-semibold text-sm">{comp.name}</h4>
+                      </div>
+                      <p className="text-white/60 text-xs sm:text-sm leading-relaxed mb-2">{comp.desc}</p>
+                      {/* Enhanced hover tooltip with transition */}
+                      <div className="h-6 overflow-hidden">
+                        <div className="opacity-0 group-hover:opacity-100 translate-y-2 group-hover:translate-y-0 transition-all duration-300 ease-out">
+                          <span
+                            className="inline-flex items-center gap-1 text-[10px] font-semibold px-2 py-0.5 rounded-md"
+                            style={{
+                              background: meta.borderColor + '22',
+                              border: `1px solid ${meta.borderColor}44`,
+                              color: meta.borderColor,
+                            }}
+                          >
+                            {meta.icon} {comp.term}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-white/60 text-xs sm:text-sm leading-relaxed mb-2">{comp.desc}</p>
-                  <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                    <span className="badge-ansi text-[10px]">{comp.term}</span>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
-          {/* Link to Diagram */}
+          {/* ──── Enhanced Link to Diagram CTA ──── */}
           <div className="text-center">
-            <button
-              onClick={() => document.getElementById('diagram-proteksi')?.scrollIntoView({ behavior: 'smooth' })}
-              className="glow-btn-green text-sm sm:text-base"
-            >
-              Lihat Diagram Proteksi →
-            </button>
+            <div className="glass-card p-6 sm:p-8 max-w-xl mx-auto" style={{ borderRadius: '20px' }}>
+              <div className="flex items-center justify-center gap-2 mb-2">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#00ff88" strokeWidth="2" className="glow-pulse">
+                  <rect x="3" y="3" width="18" height="18" rx="2" />
+                  <path d="M3 9h18" />
+                  <path d="M9 21V9" />
+                </svg>
+                <h3 className="text-white font-semibold text-base sm:text-lg">Diagram Proteksi Interaktif</h3>
+              </div>
+              <p className="text-white/50 text-xs sm:text-sm mb-5 leading-relaxed">
+                Lihat bagaimana semua komponen bekerja bersama dalam sistem proteksi
+              </p>
+              <button
+                onClick={() => document.getElementById('diagram-proteksi')?.scrollIntoView({ behavior: 'smooth' })}
+                className="glow-btn-green text-sm sm:text-base px-8 py-3 glow-pulse text-base sm:text-lg font-semibold"
+                style={{ borderRadius: '14px', minWidth: '240px' }}
+              >
+                Lihat Diagram Proteksi →
+              </button>
+            </div>
           </div>
         </div>
       </section>

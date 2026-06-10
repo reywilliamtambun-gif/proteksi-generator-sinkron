@@ -885,3 +885,150 @@ export const references = [
   'Modul Proteksi Sistem Tenaga Listrik.',
   'Modul Mesin Listrik dan Generator Sinkron.'
 ];
+
+// ===== Tutorial Steps Data =====
+export interface TutorialStep {
+  phase: number;
+  title: string;
+  description: string;
+  highlightComponent: 'generator' | 'ctpt' | 'relay' | 'tripcoil' | 'cb' | 'busbar';
+  duration: number; // ms
+}
+
+export const tutorialStepsData: Record<string, TutorialStep[]> = {
+  'overcurrent': [
+    { phase: 1, title: 'Gangguan Arus Lebih', description: 'Arus melebihi batas normal (400A → 850A). CT mendeteksi kenaikan arus dan mengirim sinyal ke relay.', highlightComponent: 'generator', duration: 1500 },
+    { phase: 2, title: 'Relay 50/51 Aktif', description: 'Relay overcurrent 50/51 menganalisis sinyal dari CT. Arus melebihi setting → relay mengirim perintah trip.', highlightComponent: 'relay', duration: 1500 },
+    { phase: 3, title: 'Trip Coil Bekerja', description: 'Sinyal trip dari relay mengaktifkan trip coil. Gaya magnetik membuka mekanisme kunci CB.', highlightComponent: 'tripcoil', duration: 1500 },
+    { phase: 4, title: 'CB Terbuka', description: 'Circuit breaker membuka rangkaian. Generator terputus dari sistem. Beban tidak mendapat pasokan.', highlightComponent: 'cb', duration: 1500 },
+    { phase: 5, title: 'Sistem Aman', description: 'Generator berhasil dipisahkan. Kerusakan lebih lanjut tercegah. Sistem dalam kondisi aman.', highlightComponent: 'busbar', duration: 1000 },
+  ],
+  'loss-of-excitation': [
+    { phase: 1, title: 'Kehilangan Eksitasi', description: 'Arus DC rotor hilang. Medan magnet melemah, tegangan turun. Impedansi masuk zona mho relay 40.', highlightComponent: 'generator', duration: 1500 },
+    { phase: 2, title: 'Relay 40 Aktif', description: 'Relay loss of excitation 40 mendeteksi impedansi masuk zona karakteristik mho. Trip command dikirim.', highlightComponent: 'relay', duration: 1500 },
+    { phase: 3, title: 'Trip Coil Bekerja', description: 'Trip coil menerima sinyal dan membuka mekanisme kunci circuit breaker.', highlightComponent: 'tripcoil', duration: 1500 },
+    { phase: 4, title: 'CB Terbuka', description: 'Circuit breaker membuka. Generator terputus sebelum kehilangan sinkronisasi.', highlightComponent: 'cb', duration: 1500 },
+    { phase: 5, title: 'Sistem Aman', description: 'Generator berhasil dipisahkan dari sistem. Kerusakan akibat operasi asynchronous tercegah.', highlightComponent: 'busbar', duration: 1000 },
+  ],
+  'reverse-power': [
+    { phase: 1, title: 'Daya Balik Terdeteksi', description: 'Prime mover kehilangan tenaga. Arah daya berubah: generator menyerap daya dari jaringan (-3.5 MW).', highlightComponent: 'generator', duration: 1500 },
+    { phase: 2, title: 'Relay 32 Aktif', description: 'Reverse power relay 32 mendeteksi daya aktif negatif. Setting terlampaui → trip command.', highlightComponent: 'relay', duration: 1500 },
+    { phase: 3, title: 'Trip Coil Bekerja', description: 'Sinyal trip mengaktifkan trip coil untuk membuka circuit breaker.', highlightComponent: 'tripcoil', duration: 1500 },
+    { phase: 4, title: 'CB Terbuka', description: 'Circuit breaker trip. Generator terputus, mencegah operasi sebagai motor.', highlightComponent: 'cb', duration: 1500 },
+    { phase: 5, title: 'Sistem Aman', description: 'Generator tidak lagi menyerap daya dari jaringan. Sistem aman.', highlightComponent: 'busbar', duration: 1000 },
+  ],
+  'negative-sequence': [
+    { phase: 1, title: 'Beban Tidak Seimbang', description: 'Arus fasa tidak merata. Komponen urutan negatif muncul (I₂ > setting). Rotor berpotensi panas.', highlightComponent: 'generator', duration: 1500 },
+    { phase: 2, title: 'Relay 46 Aktif', description: 'Negative sequence relay 46 mendeteksi I₂²×t melebihi konstanta K. Alarm + trip command.', highlightComponent: 'relay', duration: 1500 },
+    { phase: 3, title: 'Trip Coil Bekerja', description: 'Sinyal trip mengaktifkan kumparan trip coil untuk membuka CB.', highlightComponent: 'tripcoil', duration: 1500 },
+    { phase: 4, title: 'CB Terbuka', description: 'Circuit breaker trip. Generator terputus, rotor terlindungi dari pemanasan berlebih.', highlightComponent: 'cb', duration: 1500 },
+    { phase: 5, title: 'Sistem Aman', description: 'Beban tidak seimbang tidak lagi merusak rotor. Sistem dalam kondisi aman.', highlightComponent: 'busbar', duration: 1000 },
+  ],
+  'short-circuit': [
+    { phase: 1, title: 'Hubung Singkat Internal', description: 'Kerusakan isolasi stator. Arus gangguan sangat besar (2500A). Tegangan drop drastis.', highlightComponent: 'generator', duration: 1500 },
+    { phase: 2, title: 'Relay 87G + 50/51 Aktif', description: 'Relay diferensial 87G mendeteksi perbedaan arus masuk/keluar. Relay 50/51 juga aktif (arus sangat besar).', highlightComponent: 'relay', duration: 1500 },
+    { phase: 3, title: 'Trip Coil Bekerja', description: 'Dual trip signal dikirim. Trip coil segera membuka mekanisme CB.', highlightComponent: 'tripcoil', duration: 1500 },
+    { phase: 4, title: 'CB Terbuka', description: 'Circuit breaker trip cepat. Generator terputus untuk mencegah kerusakan total.', highlightComponent: 'cb', duration: 1500 },
+    { phase: 5, title: 'Sistem Aman', description: 'Gangguan internal tidak meluas. Generator terselamatkan dari kerusakan total.', highlightComponent: 'busbar', duration: 1000 },
+  ],
+};
+
+// ===== Enhanced Component Info with Real-Time Parameters =====
+export interface EnhancedComponentInfo {
+  key: string;
+  name: string;
+  description: string;
+  parameters: { label: string; normalValue: string; unit: string }[];
+  normalStatus: string;
+  faultStatus: string;
+}
+
+export const enhancedComponentInfo: EnhancedComponentInfo[] = [
+  {
+    key: 'generator',
+    name: 'Generator Sinkron',
+    description: 'Mesin listrik yang mengubah energi mekanik menjadi listrik AC. Komponen utama yang diproteksi oleh seluruh sistem relay.',
+    parameters: [
+      { label: 'Tegangan Terminal', normalValue: '11.5', unit: 'kV' },
+      { label: 'Arus Nominal', normalValue: '400', unit: 'A' },
+      { label: 'Frekuensi', normalValue: '50.0', unit: 'Hz' },
+      { label: 'Daya Aktif', normalValue: '10.0', unit: 'MW' },
+      { label: 'Faktor Daya', normalValue: '0.89', unit: '-' },
+    ],
+    normalStatus: 'Beroperasi Normal',
+    faultStatus: 'Gangguan Terdeteksi',
+  },
+  {
+    key: 'ct',
+    name: 'CT - Current Transformer',
+    description: 'Menurunkan arus besar (400A primer) menjadi arus kecil (5A sekunder) untuk dibaca relay proteksi. Rasio CT: 400/5A.',
+    parameters: [
+      { label: 'Arus Primer', normalValue: '400', unit: 'A' },
+      { label: 'Arus Sekunder', normalValue: '5', unit: 'A' },
+      { label: 'Rasio CT', normalValue: '400/5', unit: 'A/A' },
+      { label: 'Akurasi', normalValue: '5P20', unit: '-' },
+    ],
+    normalStatus: 'Pengukuran Normal',
+    faultStatus: 'Arus Melebihi Rating',
+  },
+  {
+    key: 'pt',
+    name: 'PT - Potential Transformer',
+    description: 'Menurunkan tegangan tinggi (11.5kV primer) menjadi tegangan rendah (110V sekunder) untuk relay proteksi. Rasio PT: 11.5kV/110V.',
+    parameters: [
+      { label: 'Tegangan Primer', normalValue: '11.5', unit: 'kV' },
+      { label: 'Tegangan Sekunder', normalValue: '110', unit: 'V' },
+      { label: 'Rasio PT', normalValue: '11500/110', unit: 'V/V' },
+    ],
+    normalStatus: 'Pengukuran Normal',
+    faultStatus: 'Tegangan Abnormal',
+  },
+  {
+    key: 'relay',
+    name: 'Relay Proteksi',
+    description: 'Otak sistem proteksi. Menerima sinyal dari CT/PT, menganalisis parameter, dan mengirim perintah trip jika kondisi abnormal terdeteksi.',
+    parameters: [
+      { label: 'Jumlah Relay', normalValue: '9', unit: '-' },
+      { label: 'Tegangan Supply', normalValue: '110', unit: 'V DC' },
+      { label: 'Waktu Respons', normalValue: '<20', unit: 'ms' },
+    ],
+    normalStatus: 'Standby - Monitoring',
+    faultStatus: 'Aktif - Trip Command',
+  },
+  {
+    key: 'tripcoil',
+    name: 'Trip Coil',
+    description: 'Kumparan elektromagnetik yang menerima sinyal trip dari relay. Ketika diaktifkan, menghasilkan gaya magnet untuk membuka mekanisme kunci CB.',
+    parameters: [
+      { label: 'Tegangan Operasi', normalValue: '110', unit: 'V DC' },
+      { label: 'Arus Trip', normalValue: '2-5', unit: 'A' },
+      { label: 'Waktu Respons', normalValue: '<10', unit: 'ms' },
+    ],
+    normalStatus: 'Standby',
+    faultStatus: 'Aktif - Membuka CB',
+  },
+  {
+    key: 'cb',
+    name: 'Circuit Breaker',
+    description: 'Pemutus tenaga listrik yang memisahkan generator dari sistem saat menerima sinyal trip. Harus mampu memutus arus gangguan dengan aman.',
+    parameters: [
+      { label: 'Rating Tegangan', normalValue: '11.5', unit: 'kV' },
+      { label: 'Rating Arus', normalValue: '630', unit: 'A' },
+      { label: 'Kemampuan Putus', normalValue: '25', unit: 'kA' },
+      { label: 'Waktu Buka', normalValue: '<60', unit: 'ms' },
+    ],
+    normalStatus: 'ON - Tertutup',
+    faultStatus: 'TRIP - Terbuka',
+  },
+  {
+    key: 'busbar',
+    name: 'Busbar & Beban',
+    description: 'Rel penghubung distribusi daya listrik ke beban atau sistem jaringan. Beban terhubung melalui cabang-cabang busbar.',
+    parameters: [
+      { label: 'Jumlah Beban', normalValue: '3', unit: '-' },
+      { label: 'Tegangan Busbar', normalValue: '11.5', unit: 'kV' },
+    ],
+    normalStatus: 'Beban Aktif',
+    faultStatus: 'Beban Terputus',
+  },
+];

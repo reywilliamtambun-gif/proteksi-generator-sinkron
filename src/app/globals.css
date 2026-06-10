@@ -639,3 +639,196 @@ body {
   transform: translateY(-3px);
   box-shadow: 0 6px 30px rgba(0, 150, 255, 0.5);
 }
+
+/* Border glow animation for Definisi card */
+@keyframes borderGlowCyan {
+  0%, 100% { box-shadow: 0 0 8px rgba(0, 212, 255, 0.15), inset 0 0 8px rgba(0, 212, 255, 0.05); }
+  50% { box-shadow: 0 0 20px rgba(0, 212, 255, 0.35), inset 0 0 15px rgba(0, 212, 255, 0.1); }
+}
+
+.border-glow-cyan {
+  animation: borderGlowCyan 3s ease-in-out infinite;
+}
+
+.border-glow-anim {
+  border: 1px solid transparent;
+  border-radius: inherit;
+  animation: borderGlowCyan 3s ease-in-out infinite;
+}
+
+/* ===== Volume Slider ===== */
+.volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 80px;
+  height: 4px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgba(0,212,255,0.6), rgba(100,100,120,0.3));
+  outline: none;
+  cursor: pointer;
+}
+
+.volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #00d4ff;
+  box-shadow: 0 0 6px rgba(0,212,255,0.5);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.volume-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.volume-slider::-moz-range-thumb {
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #00d4ff;
+  box-shadow: 0 0 6px rgba(0,212,255,0.5);
+  cursor: pointer;
+  border: none;
+}
+
+/* ===== Tutorial Overlay ===== */
+.tutorial-panel {
+  background: rgba(0, 10, 30, 0.9);
+  border: 1px solid rgba(255, 170, 0, 0.3);
+  border-radius: 12px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.tutorial-step-active {
+  background: rgba(255, 170, 0, 0.15);
+  border-color: rgba(255, 170, 0, 0.4);
+}
+
+.tutorial-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.2);
+  transition: all 0.3s ease;
+}
+
+.tutorial-dot-active {
+  background: #ffaa00;
+  box-shadow: 0 0 8px rgba(255, 170, 0, 0.5);
+}
+
+.tutorial-dot-completed {
+  background: #00ff88;
+  box-shadow: 0 0 6px rgba(0, 255, 136, 0.4);
+}
+
+/* ===== Enhanced SVG Tooltip ===== */
+.svg-tooltip-enhanced {
+  position: absolute;
+  background: rgba(0, 10, 30, 0.95);
+  border: 1px solid rgba(0, 200, 255, 0.3);
+  border-radius: 10px;
+  padding: 10px 14px;
+  color: white;
+  font-size: 0.8rem;
+  max-width: 320px;
+  min-width: 200px;
+  pointer-events: none;
+  z-index: 100;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+}
+
+/* ===== Phase Indicator Bar ===== */
+.phase-bar {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.phase-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  animation: phasePulse 2s ease-in-out infinite;
+}
+
+@keyframes phasePulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* ===== Monitoring Gauge ===== */
+.monitor-gauge {
+  position: relative;
+  background: rgba(0, 10, 30, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 12px;
+  padding: 12px;
+  text-align: center;
+}
+
+.monitor-gauge-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: 'Courier New', monospace;
+  line-height: 1;
+}
+
+.monitor-gauge-label {
+  font-size: 0.7rem;
+  color: rgba(255, 255, 255, 0.5);
+  margin-top: 4px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.monitor-gauge-unit {
+  font-size: 0.65rem;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+/* ===== Scrollbar for event log ===== */
+.event-log-scroll {
+  max-height: 320px;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 150, 255, 0.3) transparent;
+}
+
+.event-log-scroll::-webkit-scrollbar {
+  width: 4px;
+}
+
+.event-log-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.event-log-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 150, 255, 0.3);
+  border-radius: 2px;
+}
+
+/* ===== Responsive improvements ===== */
+@media (max-width: 640px) {
+  .monitor-gauge-value {
+    font-size: 1.1rem;
+  }
+  
+  .monitor-gauge {
+    padding: 8px;
+  }
+  
+  .volume-slider {
+    width: 60px;
+  }
+  
+  .tutorial-panel {
+    padding: 8px !important;
+  }
+}

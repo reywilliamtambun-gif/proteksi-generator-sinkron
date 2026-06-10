@@ -7,6 +7,7 @@ import {
   normalParameters,
   type EventLogEntry,
 } from '@/data/protection-data';
+import { tutorialStepsData, enhancedComponentInfo } from '@/data/protection-data';
 
 /* ─── Diagram State ─── */
 interface DiagramState {
@@ -31,7 +32,7 @@ const defaultDiagramState: DiagramState = {
   alarmActive: false,
 };
 
-/* ─── SVG component info for tooltips ─── */
+/* ─── SVG component info for tooltips (basic) ─── */
 const svgComponentInfo: Record<string, { name: string; desc: string }> = {
   generator: {
     name: 'Generator Sinkron',
@@ -88,7 +89,9 @@ const defaultMonitoring: MonitoringData = {
   load3: true,
 };
 
-/* ─── Audio helpers ─── */
+/* ─── Audio helpers (with volume) ─── */
+let audioVolume = 0.7;
+
 function playRelayClick() {
   try {
     const ctx = new AudioContext();
@@ -96,7 +99,7 @@ function playRelayClick() {
     const gain = ctx.createGain();
     osc.type = 'square';
     osc.frequency.setValueAtTime(800, ctx.currentTime);
-    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.setValueAtTime(0.15 * audioVolume, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.1);
     osc.connect(gain).connect(ctx.destination);
     osc.start();
@@ -112,7 +115,7 @@ function playTripSound() {
     osc.type = 'sawtooth';
     osc.frequency.setValueAtTime(600, ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(200, ctx.currentTime + 0.3);
-    gain.gain.setValueAtTime(0.15, ctx.currentTime);
+    gain.gain.setValueAtTime(0.15 * audioVolume, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.3);
     osc.connect(gain).connect(ctx.destination);
     osc.start();
@@ -128,7 +131,7 @@ function playNotificationSound() {
     osc.type = 'sine';
     osc.frequency.setValueAtTime(400, ctx.currentTime);
     osc.frequency.exponentialRampToValueAtTime(800, ctx.currentTime + 0.2);
-    gain.gain.setValueAtTime(0.12, ctx.currentTime);
+    gain.gain.setValueAtTime(0.12 * audioVolume, ctx.currentTime);
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.2);
     osc.connect(gain).connect(ctx.destination);
     osc.start();
@@ -144,12 +147,19 @@ export default function DiagramAndSimulation() {
   const [eventLog, setEventLog] = useState<EventLogEntry[]>([]);
   const [monitoringData, setMonitoringData] = useState<MonitoringData>(defaultMonitoring);
   const [audioMuted, setAudioMuted] = useState(true);
+  const [volume, setVolume] = useState(70);
   const [hoveredRelay, setHoveredRelay] = useState<string | null>(null);
   const [hoveredComponent, setHoveredComponent] = useState<string | null>(null);
   const [rotorAngle, setRotorAngle] = useState(0);
   const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+  const [tutorialStep, setTutorialStep] = useState(0);
   const timersRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const eventLogRef = useRef<HTMLDivElement>(null);
+
+  // Sync volume to audio helper
+  useEffect(() => {
+    audioVolume = audioMuted ? 0 : volume / 100;
+  }, [volume, audioMuted]);
 
   // Clear all pending timers
   const clearAllTimers = useCallback(() => {
@@ -196,17 +206,22 @@ export default function DiagramAndSimulation() {
     setSelectedFault(null);
     setMonitoringData(defaultMonitoring);
     setEventLog([]);
+    setTutorialStep(0);
 
     const sim = faultSimulations.find((s) => s.faultId === faultSimId);
     if (!sim) return;
+
+    // Get tutorial steps for this fault
+    const tutSteps = tutorialStepsData[faultSimId];
 
     // Start simulation
     const t0 = setTimeout(() => {
       setSelectedFault(faultSimId);
       setSimulationPhase(1);
+      setTutorialStep(0);
 
       // Play notification sound
-      if (!audioMuted) playNotificationSound();
+      if (!audioMuted && audioVolume > 0) playNotificationSound();
 
       // Phase 1: Fault detected
       addEvent(`Gangguan terdeteksi: ${sim.name}`, 'fault');
@@ -236,7 +251,8 @@ export default function DiagramAndSimulation() {
       // Phase 2: After 1.2s - Relay activates
       const t1 = setTimeout(() => {
         setSimulationPhase(2);
-        if (!audioMuted) playRelayClick();
+        setTutorialStep(1);
+        if (!audioMuted && audioVolume > 0) playRelayClick();
         addEvent(`Relay ${sim.affectedRelayAnsi.join(', ')} aktif`, 'warning');
 
         setDiagramState((prev) => ({
@@ -249,7 +265,8 @@ export default function DiagramAndSimulation() {
         // Phase 3: After 2.4s - CB trips
         const t2 = setTimeout(() => {
           setSimulationPhase(3);
-          if (!audioMuted) playTripSound();
+          setTutorialStep(2);
+          if (!audioMuted && audioVolume > 0) playTripSound();
           addEvent('Sinyal trip dikirim — Circuit Breaker TRIP', 'trip');
 
           setDiagramState((prev) => ({
@@ -268,6 +285,7 @@ export default function DiagramAndSimulation() {
           // Phase 4: After 3.6s - Generator disconnected
           const t3 = setTimeout(() => {
             setSimulationPhase(4);
+            setTutorialStep(3);
             addEvent('Generator terputus dari sistem — AMAN', 'safe');
 
             setDiagramState((prev) => ({
@@ -278,6 +296,12 @@ export default function DiagramAndSimulation() {
               aksiSistem: 'Generator Terputus',
               statusSistem: 'Aman',
             }));
+
+            // Phase 5: After 4.8s - Tutorial complete
+            const t4 = setTimeout(() => {
+              setTutorialStep(4);
+            }, 1200);
+            timersRef.current.push(t4);
           }, 1200);
           timersRef.current.push(t3);
         }, 1200);
@@ -295,6 +319,7 @@ export default function DiagramAndSimulation() {
     setDiagramState(defaultDiagramState);
     setMonitoringData(defaultMonitoring);
     setEventLog([]);
+    setTutorialStep(0);
     addEvent('Simulasi direset — Sistem kembali normal', 'info');
   }, [clearAllTimers, addEvent]);
 
@@ -310,6 +335,25 @@ export default function DiagramAndSimulation() {
     link.click();
     URL.revokeObjectURL(url);
   }, [eventLog]);
+
+  // PDF Export
+  const exportEventLogPDF = useCallback(() => {
+    const sim = faultSimulations.find((s) => s.faultId === selectedFault);
+    const printContent = `
+      <html><head><title>Event Log - Proteksi Generator</title>
+      <style>body{font-family:monospace;padding:20px;background:#1a1a2e;color:#eee}table{width:100%;border-collapse:collapse}th,td{border:1px solid #333;padding:8px;text-align:left}th{background:#222}.fault{color:red}.warning{color:orange}.trip{color:#ff6600}.safe{color:green}.info{color:cyan}h1{color:#00d4ff}</style></head>
+      <body><h1>Event Log - Simulasi Gangguan Generator</h1>
+      <p>Fault: ${sim?.name || '-'}</p><p>Relay: ${diagramState.relayAktif.join(', ') || '-'}</p>
+      <table><tr><th>Time</th><th>Event</th><th>Type</th></tr>
+      ${eventLog.map(e => `<tr><td>${e.timestamp}</td><td>${e.event}</td><td class="${e.type}">${e.type}</td></tr>`).join('')}
+      </table></body></html>`;
+    const win = window.open('', '_blank');
+    if (win) {
+      win.document.write(printContent);
+      win.document.close();
+      win.print();
+    }
+  }, [eventLog, selectedFault, diagramState.relayAktif]);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -412,6 +456,26 @@ export default function DiagramAndSimulation() {
 
   const selectedSim = faultSimulations.find((s) => s.faultId === selectedFault);
 
+  // Get tutorial data for current fault
+  const currentTutorialSteps = selectedFault ? tutorialStepsData[selectedFault] : null;
+  const currentTutorialStep = currentTutorialSteps ? currentTutorialSteps[tutorialStep] : null;
+
+  // Get enhanced component info for tooltip
+  const getEnhancedInfo = (key: string) => enhancedComponentInfo.find((c) => c.key === key);
+
+  // Tutorial component highlight mapping
+  const getTutorialHighlightId = (component: string) => {
+    switch (component) {
+      case 'generator': return 'svg-generator';
+      case 'ctpt': return 'svg-ctpt';
+      case 'relay': return 'svg-relay-group';
+      case 'tripcoil': return 'svg-tripcoil';
+      case 'cb': return 'svg-cb';
+      case 'busbar': return 'svg-busbar';
+      default: return '';
+    }
+  };
+
   return (
     <>
       {/* ====================== SECTION 9: DIAGRAM PROTEKSI INTERAKTIF ====================== */}
@@ -424,12 +488,46 @@ export default function DiagramAndSimulation() {
 
           {/* SVG Single-Line Diagram */}
           <div className="glass-card p-4 sm:p-6 relative overflow-hidden">
-            {/* Status indicator */}
-            <div className="flex items-center gap-2 mb-4">
-              <div className={`w-3 h-3 rounded-full ${diagramState.alarmActive ? 'bg-red-500 alarm-blink' : diagramState.status === 'normal' ? 'bg-green-500' : 'bg-gray-500'}`} />
-              <span className="text-sm text-white/70 font-mono">
-                {diagramState.status === 'normal' ? 'SISTEM NORMAL' : diagramState.status === 'gangguan' ? 'GANGGUAN TERDETEKSI' : 'GENERATOR TERPUTUS'}
-              </span>
+            {/* Status indicator + Audio controls */}
+            <div className="flex items-center justify-between mb-4 flex-wrap gap-3">
+              <div className="flex items-center gap-2">
+                <div className={`w-3 h-3 rounded-full ${diagramState.alarmActive ? 'bg-red-500 alarm-blink' : diagramState.status === 'normal' ? 'bg-green-500' : 'bg-gray-500'}`} />
+                <span className="text-sm text-white/70 font-mono">
+                  {diagramState.status === 'normal' ? 'SISTEM NORMAL' : diagramState.status === 'gangguan' ? 'GANGGUAN TERDETEKSI' : 'GENERATOR TERPUTUS'}
+                </span>
+              </div>
+
+              {/* Audio controls: mute + volume slider */}
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setAudioMuted((prev) => !prev)}
+                  className="text-white/60 hover:text-white transition-colors"
+                  aria-label={audioMuted ? 'Unmute audio' : 'Mute audio'}
+                >
+                  {audioMuted ? (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2v6h4l5 4V5z" /><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" /></svg>
+                  ) : (
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /></svg>
+                  )}
+                </button>
+                <input
+                  type="range"
+                  min="0"
+                  max="100"
+                  value={audioMuted ? 0 : volume}
+                  onChange={(e) => {
+                    const v = parseInt(e.target.value);
+                    if (v > 0 && audioMuted) setAudioMuted(false);
+                    setVolume(v);
+                  }}
+                  className="w-20 h-1.5 rounded-full appearance-none cursor-pointer"
+                  style={{
+                    background: `linear-gradient(to right, #00d4ff ${audioMuted ? 0 : volume}%, rgba(255,255,255,0.15) ${audioMuted ? 0 : volume}%)`,
+                  }}
+                  aria-label="Volume"
+                />
+                <span className="text-xs text-white/40 font-mono w-8">{audioMuted ? '0%' : `${volume}%`}</span>
+              </div>
             </div>
 
             <svg
@@ -468,6 +566,13 @@ export default function DiagramAndSimulation() {
                   <feComposite in="color" in2="blur" operator="in" result="glow" />
                   <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
                 </filter>
+                {/* Tutorial highlight filter */}
+                <filter id="tutorialHighlight" x="-30%" y="-30%" width="160%" height="160%">
+                  <feGaussianBlur stdDeviation="6" result="blur" />
+                  <feFlood floodColor="#ffaa00" floodOpacity="0.4" result="color" />
+                  <feComposite in="color" in2="blur" operator="in" result="glow" />
+                  <feMerge><feMergeNode in="glow" /><feMergeNode in="SourceGraphic" /></feMerge>
+                </filter>
               </defs>
 
               {/* Background grid */}
@@ -488,6 +593,37 @@ export default function DiagramAndSimulation() {
                 <text x="455" y="12" fill="rgba(255,255,255,0.5)" fontSize="9">Fault</text>
               </g>
 
+              {/* ===== R/S/T PHASE FLOW ARROWS ===== */}
+              {/* Phase R: Red arrow at y=290 */}
+              <line
+                x1="140" y1="290" x2="190" y2="290"
+                stroke="#ff4444" strokeWidth="2.5" strokeDasharray="8 5"
+                className={isFlowStopped ? '' : 'electricity-flow'}
+                opacity={isFlowStopped ? 0.2 : 0.8}
+              />
+              <polygon points="188,286 196,290 188,294" fill="#ff4444" opacity={isFlowStopped ? 0.2 : 0.8} />
+              <text x="168" y="286" fill="#ff4444" fontSize="7" fontWeight="bold" opacity={isFlowStopped ? 0.2 : 0.7}>R</text>
+
+              {/* Phase S: Yellow arrow at y=300 */}
+              <line
+                x1="140" y1="300" x2="190" y2="300"
+                stroke="#ffaa00" strokeWidth="2.5" strokeDasharray="8 5"
+                className={isFlowStopped ? '' : 'electricity-flow'}
+                opacity={isFlowStopped ? 0.2 : 0.8}
+              />
+              <polygon points="188,296 196,300 188,304" fill="#ffaa00" opacity={isFlowStopped ? 0.2 : 0.8} />
+              <text x="168" y="296" fill="#ffaa00" fontSize="7" fontWeight="bold" opacity={isFlowStopped ? 0.2 : 0.7}>S</text>
+
+              {/* Phase T: Blue arrow at y=310 */}
+              <line
+                x1="140" y1="310" x2="190" y2="310"
+                stroke="#4488ff" strokeWidth="2.5" strokeDasharray="8 5"
+                className={isFlowStopped ? '' : 'electricity-flow'}
+                opacity={isFlowStopped ? 0.2 : 0.8}
+              />
+              <polygon points="188,306 196,310 188,314" fill="#4488ff" opacity={isFlowStopped ? 0.2 : 0.8} />
+              <text x="168" y="306" fill="#4488ff" fontSize="7" fontWeight="bold" opacity={isFlowStopped ? 0.2 : 0.7}>T</text>
+
               {/* ===== CONNECTION LINES ===== */}
 
               {/* Generator → CT/PT: main power line (green=normal, red=fault) */}
@@ -505,7 +641,7 @@ export default function DiagramAndSimulation() {
               {/* CT vertical bus */}
               <line x1="290" y1="220" x2="290" y2="400" stroke="#ffaa00" strokeWidth="1.5" strokeDasharray="4 4" className={isFlowStopped ? '' : 'electricity-flow'} opacity={isFlowStopped ? 0.2 : 0.5} />
               {/* CT signal horizontal taps to relays */}
-              {relayDetails.filter(r => r.ctInput).map((relay, i) => {
+              {relayDetails.filter(r => r.ctInput).map((relay) => {
                 const pos = getRelayPos(relayDetails.indexOf(relay));
                 const midY = pos.y + relayBoxH / 2;
                 return (
@@ -582,9 +718,11 @@ export default function DiagramAndSimulation() {
 
               {/* ===== GENERATOR ===== */}
               <g
+                id="svg-generator"
                 onMouseEnter={(e) => handleComponentHover('generator', e)}
                 onMouseLeave={handleComponentLeave}
                 className="cursor-pointer"
+                filter={currentTutorialStep?.highlightComponent === 'generator' ? 'url(#tutorialHighlight)' : undefined}
               >
                 <circle
                   cx="80" cy="300" r="55"
@@ -612,9 +750,11 @@ export default function DiagramAndSimulation() {
 
               {/* ===== CT (Current Transformer) ===== */}
               <g
+                id="svg-ctpt"
                 onMouseEnter={(e) => handleComponentHover('ct', e)}
                 onMouseLeave={handleComponentLeave}
                 className="cursor-pointer"
+                filter={currentTutorialStep?.highlightComponent === 'ctpt' ? 'url(#tutorialHighlight)' : undefined}
               >
                 <circle cx="255" cy="220" r="24" fill="rgba(0,20,50,0.6)" stroke="#00d4ff" strokeWidth="2" filter="url(#componentGlow)" />
                 <circle cx="255" cy="220" r="15" fill="rgba(0,10,30,0.8)" stroke="#00d4ff" strokeWidth="1.5" />
@@ -643,7 +783,10 @@ export default function DiagramAndSimulation() {
               <text x="255" y="200" textAnchor="middle" fill="rgba(255,255,255,0.25)" fontSize="8" fontWeight="bold">CT / PT</text>
 
               {/* ===== RELAY GROUP (9 relays in 3x3 grid) ===== */}
-              <g>
+              <g
+                id="svg-relay-group"
+                filter={currentTutorialStep?.highlightComponent === 'relay' ? 'url(#tutorialHighlight)' : undefined}
+              >
                 {/* Group label */}
                 <text x={relayStartX + (3 * (relayBoxW + relayGapX) - relayGapX) / 2} y="80" textAnchor="middle" fill="rgba(255,255,255,0.5)" fontSize="11" fontWeight="bold">RELAY PROTEKSI</text>
 
@@ -734,9 +877,11 @@ export default function DiagramAndSimulation() {
 
               {/* ===== TRIP COIL ===== */}
               <g
+                id="svg-tripcoil"
                 onMouseEnter={(e) => handleComponentHover('tripcoil', e)}
                 onMouseLeave={handleComponentLeave}
                 className="cursor-pointer"
+                filter={currentTutorialStep?.highlightComponent === 'tripcoil' ? 'url(#tutorialHighlight)' : undefined}
               >
                 <rect
                   x="740" y="270" width="70" height="60" rx="8"
@@ -761,9 +906,11 @@ export default function DiagramAndSimulation() {
 
               {/* ===== CIRCUIT BREAKER ===== */}
               <g
+                id="svg-cb"
                 onMouseEnter={(e) => handleComponentHover('cb', e)}
                 onMouseLeave={handleComponentLeave}
                 className="cursor-pointer"
+                filter={currentTutorialStep?.highlightComponent === 'cb' ? 'url(#tutorialHighlight)' : undefined}
               >
                 <rect
                   x="870" y="250" width="90" height="100" rx="8"
@@ -793,9 +940,11 @@ export default function DiagramAndSimulation() {
 
               {/* ===== BUSBAR ===== */}
               <g
+                id="svg-busbar"
                 onMouseEnter={(e) => handleComponentHover('busbar', e)}
                 onMouseLeave={handleComponentLeave}
                 className="cursor-pointer"
+                filter={currentTutorialStep?.highlightComponent === 'busbar' ? 'url(#tutorialHighlight)' : undefined}
               >
                 {/* Vertical busbar */}
                 <line x1="1050" y1="150" x2="1050" y2="450" stroke={cbIsTrip ? 'rgba(100,100,100,0.5)' : '#8844ff'} strokeWidth="6" filter={cbIsTrip ? undefined : 'url(#glowPurple)'} />
@@ -872,19 +1021,52 @@ export default function DiagramAndSimulation() {
               );
             })()}
 
-            {/* Tooltip for components */}
-            {hoveredComponent && tooltipPos && svgComponentInfo[hoveredComponent] && (
-              <div
-                className="svg-tooltip"
-                style={{
-                  left: `${Math.min(tooltipPos.x, 700)}px`,
-                  top: `${tooltipPos.y - 80}px`,
-                }}
-              >
-                <div className="font-bold text-cyan-300 mb-1">{svgComponentInfo[hoveredComponent].name}</div>
-                <div className="text-white/80 text-xs">{svgComponentInfo[hoveredComponent].desc}</div>
-              </div>
-            )}
+            {/* Enhanced tooltip for components */}
+            {hoveredComponent && tooltipPos && (() => {
+              const basic = svgComponentInfo[hoveredComponent];
+              const enhanced = getEnhancedInfo(hoveredComponent);
+              if (!basic) return null;
+
+              return (
+                <div
+                  className="svg-tooltip"
+                  style={{
+                    left: `${Math.min(tooltipPos.x, 650)}px`,
+                    top: `${Math.min(tooltipPos.y - 40, 100)}px`,
+                    maxWidth: '320px',
+                  }}
+                >
+                  <div className="font-bold text-cyan-300 mb-1">{basic.name}</div>
+                  <div className="text-white/80 text-xs mb-2">{enhanced?.description || basic.desc}</div>
+
+                  {/* Parameter table */}
+                  {enhanced && enhanced.parameters.length > 0 && (
+                    <div className="mb-2">
+                      <div className="text-white/50 text-[10px] uppercase tracking-wider mb-1">Parameters</div>
+                      <table className="w-full text-xs">
+                        <tbody>
+                          {enhanced.parameters.map((p, i) => (
+                            <tr key={i} className="border-b border-white/5">
+                              <td className="text-white/60 py-0.5 pr-3">{p.label}</td>
+                              <td className="text-cyan-400 font-mono py-0.5 pr-2">{p.normalValue}</td>
+                              <td className="text-white/40 py-0.5">{p.unit}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+
+                  {/* Normal vs Fault status */}
+                  {enhanced && (
+                    <div className="flex gap-2 text-[10px]">
+                      <span className="text-green-400">Normal: {enhanced.normalStatus}</span>
+                      <span className="text-red-400">Fault: {enhanced.faultStatus}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            })()}
 
             {/* Dashboard Status */}
             <div className="mt-6 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
@@ -1061,11 +1243,11 @@ export default function DiagramAndSimulation() {
           {/* Summary Flow */}
           <div className="mt-6 glass-card p-4 text-center">
             <p className="text-white/60 text-sm font-mono">
-              <span className="text-red-400">Gangguan</span> {' → '} 
-              <span className="text-cyan-400">CT/PT</span> {' → '} 
-              <span className="text-yellow-400">Relai Aktif</span> {' → '} 
-              <span className="text-purple-400">Trip Coil</span> {' → '} 
-              <span className="text-orange-400">CB Trip</span> {' → '} 
+              <span className="text-red-400">Gangguan</span> {' → '}
+              <span className="text-cyan-400">CT/PT</span> {' → '}
+              <span className="text-yellow-400">Relai Aktif</span> {' → '}
+              <span className="text-purple-400">Trip Coil</span> {' → '}
+              <span className="text-orange-400">CB Trip</span> {' → '}
               <span className="text-green-400">Generator Terputus</span>
             </p>
           </div>
@@ -1082,19 +1264,6 @@ export default function DiagramAndSimulation() {
                 Pilih jenis gangguan untuk menjalankan simulasi proteksi otomatis
               </p>
             </div>
-            {/* Audio mute toggle */}
-            <button
-              onClick={() => setAudioMuted((prev) => !prev)}
-              className={`glow-btn flex items-center gap-2 text-sm ${audioMuted ? 'opacity-60' : ''}`}
-              aria-label={audioMuted ? 'Unmute audio' : 'Mute audio'}
-            >
-              {audioMuted ? (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2v6h4l5 4V5z" /><line x1="23" y1="9" x2="17" y2="15" /><line x1="17" y1="9" x2="23" y2="15" /></svg>
-              ) : (
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M19.07 4.93a10 10 0 0 1 0 14.14" /><path d="M15.54 8.46a5 5 0 0 1 0 7.07" /></svg>
-              )}
-              {audioMuted ? 'Unmute' : 'Audio On'}
-            </button>
           </div>
 
           {/* Fault type selector */}
@@ -1145,10 +1314,54 @@ export default function DiagramAndSimulation() {
             </div>
           )}
 
+          {/* Tutorial Panel (shown when simulation active) */}
+          {currentTutorialSteps && simulationPhase > 0 && (
+            <div className="mt-4 glass-card p-4 sm:p-6 border-l-4 border-l-amber-500">
+              <div className="flex items-center gap-2 mb-3">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ffaa00" strokeWidth="2"><circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" /></svg>
+                <h4 className="text-amber-400 font-bold text-sm">Tutorial Langkah-langkah</h4>
+              </div>
+
+              {currentTutorialStep && (
+                <div className="mb-4">
+                  <div className="flex items-center gap-2 mb-2">
+                    <span className="bg-amber-500/20 text-amber-400 text-xs font-bold px-2 py-0.5 rounded">
+                      Langkah {currentTutorialStep.phase}/5
+                    </span>
+                    <span className="text-white font-bold text-sm">{currentTutorialStep.title}</span>
+                  </div>
+                  <p className="text-white/70 text-sm leading-relaxed">{currentTutorialStep.description}</p>
+                  <p className="text-white/40 text-xs mt-2 font-mono">
+                    Highlight: {currentTutorialStep.highlightComponent.toUpperCase()}
+                  </p>
+                </div>
+              )}
+
+              {/* Progress dots */}
+              <div className="flex items-center gap-2">
+                {currentTutorialSteps.map((_, i) => (
+                  <div
+                    key={i}
+                    className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                      i === tutorialStep
+                        ? 'bg-amber-400 scale-125'
+                        : i < tutorialStep
+                          ? 'bg-amber-400/50'
+                          : 'bg-white/20'
+                    }`}
+                  />
+                ))}
+                <span className="text-white/40 text-xs ml-2">
+                  {tutorialStep + 1} / {currentTutorialSteps.length}
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
             {/* Real-time Monitoring Panel */}
             <div className="glass-card p-4 sm:p-6">
-              <h3 className="text-lg font-bold text-cyan-400 mb-4">Real-time Monitoring</h3>
+              <h3 className="text-lg font-bold text-cyan-400 mb-4">Panel Monitoring Real-Time</h3>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {/* Tegangan Fasa R */}
                 <div className="bg-white/5 border border-white/10 rounded-lg p-3 text-center">
@@ -1228,15 +1441,24 @@ export default function DiagramAndSimulation() {
 
             {/* Event Log */}
             <div className="glass-card p-4 sm:p-6 flex flex-col">
-              <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
                 <h3 className="text-lg font-bold text-cyan-400">Event Log</h3>
-                <button
-                  onClick={exportEventLog}
-                  disabled={eventLog.length === 0}
-                  className="glow-btn-yellow text-xs disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  Export CSV
-                </button>
+                <div className="flex gap-2">
+                  <button
+                    onClick={exportEventLog}
+                    disabled={eventLog.length === 0}
+                    className="glow-btn-yellow text-xs disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    Export CSV
+                  </button>
+                  <button
+                    onClick={exportEventLogPDF}
+                    disabled={eventLog.length === 0}
+                    className="glow-btn text-xs disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    Export PDF
+                  </button>
+                </div>
               </div>
               <div
                 ref={eventLogRef}
